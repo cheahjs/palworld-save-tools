@@ -32,7 +32,7 @@ def main():
         decode_character_data(json_blob)
     output_path = save_path + ".json"
     print(f"Writing JSON to {output_path}")
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf8") as f:
         json.dump(json_blob, f, indent=2, cls=CustomEncoder, ensure_ascii=False)
 
 
