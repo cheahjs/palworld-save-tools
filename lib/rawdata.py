@@ -18,7 +18,7 @@ def decode_group_data(level_json):
         group["value"]["Struct"]["Struct"]["RawData"][
             "Parsed"
         ] = decode_group_data_bytes(group_bytes, group_type)
-        if os.environ["DEBUG"] != "1":
+        if os.environ.get("DEBUG", "0") != "1":
             del group["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"][
                 "Byte"
             ]["Byte"]
@@ -92,7 +92,7 @@ def encode_group_data(level_json):
         group["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"]["Byte"][
             "Byte"
         ] = [b for b in encoded_bytes]
-        if os.environ["DEBUG"] != "1":
+        if os.environ.get("DEBUG", "0") != "1":
             del group["value"]["Struct"]["Struct"]["RawData"]["Parsed"]
 
 
@@ -142,7 +142,7 @@ def decode_character_data(level_json):
         char["value"]["Struct"]["Struct"]["RawData"][
             "Parsed"
         ] = decode_character_data_bytes(char_bytes)
-        if os.environ["DEBUG"] != "1":
+        if os.environ.get("DEBUG", "0") != "1":
             del char["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"][
                 "Byte"
             ]["Byte"]
@@ -178,7 +178,7 @@ def encode_character_data(level_json):
         char["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"]["Byte"][
             "Byte"
         ] = [b for b in encoded_bytes]
-        if os.environ["DEBUG"] != "1":
+        if os.environ.get("DEBUG", "0") != "1":
             del char["value"]["Struct"]["Struct"]["RawData"]["Parsed"]
 
 
