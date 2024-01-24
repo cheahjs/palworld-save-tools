@@ -61,11 +61,11 @@ class FArchiveWriter:
     def write_bool(self, bool):
         self.data.write(struct.pack("?", bool))
 
-    def write_fstring(self, string):
+    def write_fstring(self, string) -> int:
+        start = self.data.tell()
         if string == "":
             self.write_int32(0)
-            return
-        if string.isascii():
+        elif string.isascii():
             str_bytes = string.encode("utf-8")
             self.write_int32(len(string) + 1)
             self.data.write(str_bytes)
@@ -75,6 +75,7 @@ class FArchiveWriter:
             self.write_int32(-(len(string) + 1))
             self.data.write(str_bytes)
             self.data.write(b"\x00\x00")
+        return self.data.tell() - start
 
     def write_int16(self, i):
         self.data.write(struct.pack("h", i))
@@ -101,7 +102,7 @@ class FArchiveWriter:
         self.data.write(struct.pack("d", i))
 
     def write_byte(self, b):
-        self.data.write(b)
+        self.data.write(bytes([b]))
 
     def write_uint8(self, b):
         self.data.write(struct.pack("B", b))
@@ -133,57 +134,63 @@ class FArchiveWriter:
     def write_property(self, property):
         # write type_name
         self.write_fstring(property["type"])
-        # skip size for now
-        size_pos = self.data.tell()
-        self.write_uint64(0)
-        data_start = self.data.tell()
-        # write data
+        nested_writer = FArchiveWriter()
+        size: int
         match property["type"]:
             case "StructProperty":
-                self.write_struct(property)
+                size = nested_writer.write_struct(property)
             case "IntProperty":
-                self.write_optional_uuid(property.get("id", None))
-                self.write_int32(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                nested_writer.write_int32(property["value"])
+                size = 4
             case "Int64Property":
-                self.write_optional_uuid(property.get("id", None))
-                self.write_int64(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                nested_writer.write_int64(property["value"])
+                size = 8
             case "FixedPoint64Property":
-                self.write_optional_uuid(property.get("id", None))
-                self.write_int32(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                nested_writer.write_int32(property["value"])
+                size = 4
             case "FloatProperty":
-                self.write_optional_uuid(property.get("id", None))
-                self.write_float(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                nested_writer.write_float(property["value"])
+                size = 4
             case "StrProperty":
-                self.write_optional_uuid(property.get("id", None))
-                self.write_fstring(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                size = nested_writer.write_fstring(property["value"])
             case "NameProperty":
-                self.write_optional_uuid(property.get("id", None))
-                self.write_fstring(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                size = nested_writer.write_fstring(property["value"])
             case "EnumProperty":
-                self.write_fstring(property["value"]["type"])
-                self.write_optional_uuid(property.get("id", None))
-                self.write_fstring(property["value"]["value"])
+                nested_writer.write_fstring(property["value"]["type"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                size = nested_writer.write_fstring(property["value"]["value"])
             case "BoolProperty":
-                self.write_bool(property["value"])
-                self.write_optional_uuid(property.get("id", None))
+                nested_writer.write_bool(property["value"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                size = 0
             case "ArrayProperty":
-                self.write_fstring(property["array_type"])
-                self.write_optional_uuid(property.get("id", None))
-                self.write_array_property(property["array_type"], property["value"])
+                nested_writer.write_fstring(property["array_type"])
+                nested_writer.write_optional_uuid(property.get("id", None))
+                array_writer = FArchiveWriter()
+                array_writer.write_array_property(property["array_type"], property["value"])
+                array_buf = array_writer.bytes()
+                size = len(array_buf)
+                nested_writer.write_bytes(array_buf)
             case _:
                 raise Exception(f'Unknown property type: {property["type"]}')
+        buf = nested_writer.bytes()
         # write size
-        data_end = self.data.tell()
-        data_size = data_end - data_start
-        self.data.seek(size_pos)
-        self.write_uint64(data_size)
-        self.data.seek(data_end)
+        self.write_uint64(size)
+        self.write_bytes(buf)
 
-    def write_struct(self, property):
+    def write_struct(self, property) -> int:
         self.write_fstring(property["struct_type"])
         self.write_uuid_str(property["struct_id"])
         self.write_optional_uuid(property.get("id", None))
+        start = self.data.tell()
         self.write_struct_value(property["struct_type"], property["value"])
+        return self.data.tell() - start
 
     def write_struct_value(self, struct_type, value):
         if struct_type in [
@@ -213,19 +220,15 @@ class FArchiveWriter:
         if array_type == "StructProperty":
             self.write_fstring(value["prop_name"])
             self.write_fstring(value["prop_type"])
-            size_pos = self.data.tell()
-            self.write_uint64(0)
+            nested_writer = FArchiveWriter()
+            for i in range(count):
+                nested_writer.write_struct_value(value["type_name"], value["values"][i])
+            data_buf = nested_writer.bytes()
+            self.write_uint64(len(data_buf))
             self.write_fstring(value["type_name"])
             self.write_uuid_str(value["id"])
             self.write_uint8(0)
-            data_start = self.data.tell()
-            for i in range(count):
-                self.write_struct_value(value["type_name"], value["values"][i])
-            data_end = self.data.tell()
-            data_size = data_end - data_start
-            self.data.seek(size_pos)
-            self.write_uint64(data_size)
-            self.data.seek(data_end)
+            self.write_bytes(data_buf)
         else:
             self.write_array_value(array_type, count, value["values"])
 
