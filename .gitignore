@@ -1,0 +1,8 @@
+localtest
+.DS_Store
+*.code-workspace
+.vscode
+/target
+/rust
+/legacy
+__pycache__
