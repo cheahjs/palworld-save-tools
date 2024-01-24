@@ -15,6 +15,7 @@ jobs:
           tag: v0.3.0
           fileName: uesave-x86_64-pc-windows-msvc.zip
           out-file-path: dist/uesave
+          extract: true
       - shell: bash
         run: |
           cp LICENSE dist/
