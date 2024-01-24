@@ -60,6 +60,9 @@ def convert_to_json(uesave_path: str, save_path: str) -> Dict[str, Any]:
             raise Exception(
                 f"File {save_path} has an incorrect uncompressed length: {uncompressed_len}"
             )
+        if os.environ['DEBUG'] == '1':
+            with open(save_path + ".gvas", "wb") as f:
+                f.write(uncompressed_data)
         # Convert to json with uesave
         # Run uesave.exe with the uncompressed file piped as stdin
         # stdout will be the json string
@@ -93,6 +96,9 @@ def convert_to_save(uesave_path: str, json_path: str, json_blob: Dict[str, Any])
         raise Exception(
             f"uesave.exe failed to convert {json_path} (return {uesave_run.returncode})"
         )
+    if os.environ['DEBUG'] == '1':
+        with open(json_path + ".sav", "wb") as f:
+            f.write(uesave_run.stdout)
     # Open the old sav file to get type
     if os.path.exists(sav_file):
         with open(sav_file, "rb") as f:

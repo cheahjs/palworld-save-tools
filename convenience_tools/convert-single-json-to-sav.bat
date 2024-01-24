@@ -25,7 +25,7 @@ cd /D "%~dp0"
 
 @REM Check if first argument exists
 IF NOT EXIST "%~1" (
-    ECHO You must specify a directory to convert.
+    ECHO You must specify a .sav file to convert.
     PAUSE
     EXIT /B 1
 )

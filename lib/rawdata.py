@@ -1,3 +1,4 @@
+import os
 from lib.noindent import NoIndent
 from lib.reader import *
 from lib.writer import *
@@ -61,7 +62,11 @@ def decode_group_data(level_json):
             print("Warning: EOF not reached")
             exit(1)
         group['value']['Struct']['Struct']['RawData']['Parsed'] = group_data
-        del group['value']['Struct']['Struct']['RawData']['Array']['value']['Base']['Byte']['Byte']
+        if os.environ['DEBUG'] != '1':
+            del group['value']['Struct']['Struct']['RawData']['Array']['value']['Base']['Byte']['Byte']
+
+
+
 
 
 def encode_group_data(level_json):
@@ -101,7 +106,8 @@ def encode_group_data(level_json):
         encoded_bytes = writer.bytes()
         byte_list = [b for b in encoded_bytes]
         group['value']['Struct']['Struct']['RawData']['Array']['value']['Base']['Byte']['Byte'] = byte_list
-        del group['value']['Struct']['Struct']['RawData']['Parsed']
+        if os.environ['DEBUG'] != '1':
+            del group['value']['Struct']['Struct']['RawData']['Parsed']
 
 
 def decode_character_data(level_json):
@@ -120,7 +126,8 @@ def decode_character_data(level_json):
             print("Warning: EOF not reached")
             exit(1)
         char['value']['Struct']['Struct']['RawData']['Parsed'] = char_data
-        del char['value']['Struct']['Struct']['RawData']['Array']['value']['Base']['Byte']['Byte']
+        if os.environ['DEBUG'] != '1':
+            del char['value']['Struct']['Struct']['RawData']['Array']['value']['Base']['Byte']['Byte']
 
 
 def encode_character_data(level_json):
@@ -140,4 +147,5 @@ def encode_character_data(level_json):
         encoded_bytes = writer.bytes()
         byte_list = [b for b in encoded_bytes]
         char['value']['Struct']['Struct']['RawData']['Array']['value']['Base']['Byte']['Byte'] = byte_list
-        del char['value']['Struct']['Struct']['RawData']['Parsed']
+        if os.environ['DEBUG'] != '1':
+            del char['value']['Struct']['Struct']['RawData']['Parsed']
