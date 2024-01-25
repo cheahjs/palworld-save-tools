@@ -1,27 +1,34 @@
 @ECHO OFF
 
 @REM Check if python is installed, error if not
-python --version 2>NUL
+python3 --version 2>NUL
 IF %ERRORLEVEL% NEQ 0 (
-    python3 --version 2>NUL
+    py --version 2>NUL
     IF %ERRORLEVEL% NEQ 0 (
-        py3 --version 2>NUL
+        python --version 2>NUL
         IF %ERRORLEVEL% NEQ 0 (
             ECHO Python is not installed. Please install python and try again.
             PAUSE
             EXIT /B 1
         ) ELSE (
-            SET PYTHON_BIN=py3
+            SET PYTHON_BIN=python
         )
     ) ELSE (
-        SET PYTHON_BIN=python3
+        SET PYTHON_BIN=py
     )
 ) ELSE (
-    SET PYTHON_BIN=python
+    SET PYTHON_BIN=python3
 )
 
 @REM Switch to script directory
 cd /D "%~dp0"
+
+@REM Check if convert-single-json-to-sav.py exists
+IF NOT EXIST "convert-single-json-to-sav.py" (
+    ECHO convert-single-json-to-sav.py is missing.
+    PAUSE
+    EXIT /B 1
+)
 
 @REM Check if first argument exists
 IF NOT EXIST "%~1" (
