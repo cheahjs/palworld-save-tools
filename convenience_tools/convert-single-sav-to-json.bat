@@ -7,7 +7,7 @@ for %%A in (python3 python py) do (
     if !errorlevel! EQU 0 (
         set "PYTHON_BIN=%%A"
         echo Found Python at !PYTHON_BIN!
-        %PYTHON_BIN% --version
+        !PYTHON_BIN! --version
         goto :Found
     )
 )
