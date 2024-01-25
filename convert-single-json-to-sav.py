@@ -37,7 +37,7 @@ def main():
         print(f"Encoding CharacterSaveParameterMap")
         encode_character_data(data)
     print(f"Converting JSON")
-    convert_to_save(uesave_path, save_path, data)
+    convert_to_sav(uesave_path, save_path, data)
 
 
 if __name__ == "__main__":
