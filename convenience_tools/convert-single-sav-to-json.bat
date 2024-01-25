@@ -38,7 +38,7 @@ IF NOT EXIST "uesave/uesave.exe" (
     EXIT /B 1
 )
 
-ECHO This will convert save files "%~1" to JSON format.
+ECHO This will convert the save file "%~1" to JSON format.
 @REM Ask user if they want to continue
 CHOICE /C YN /M "Continue?"
 IF %ERRORLEVEL% NEQ 1 (
