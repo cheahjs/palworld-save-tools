@@ -1,25 +1,22 @@
 @ECHO OFF
+SETLOCAL enabledelayedexpansion
 
-@REM Check if python is installed, error if not
-python3 --version 2>NUL
-IF %ERRORLEVEL% NEQ 0 (
-    py --version 2>NUL
-    IF %ERRORLEVEL% NEQ 0 (
-        python --version 2>NUL
-        IF %ERRORLEVEL% NEQ 0 (
-            ECHO Python is not installed. Please install python and try again.
-            PAUSE
-            EXIT /B 1
-        ) ELSE (
-            SET PYTHON_BIN=python
-        )
-    ) ELSE (
-        SET PYTHON_BIN=py
+:FindPythonCommand
+for %%A in (python3 python py) do (
+    where /Q %%A
+    if !errorlevel! EQU 0 (
+        set "PYTHON_BIN=%%A"
+        echo Found Python at !PYTHON_BIN!
+        !PYTHON_BIN! --version
+        goto :Found
     )
-) ELSE (
-    SET PYTHON_BIN=python3
 )
 
+echo Python not found. Please install Python 3.
+pause
+exit /B 1
+
+:Found
 @REM Switch to script directory
 cd /D "%~dp0"
 
