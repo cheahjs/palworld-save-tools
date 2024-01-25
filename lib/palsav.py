@@ -22,44 +22,7 @@ def convert_to_json(uesave_path: str, save_path: str) -> Dict[str, Any]:
     with open(save_path, "rb") as f:
         # Read the file
         data = f.read()
-        uncompressed_len = int.from_bytes(data[0:4], byteorder="little")
-        compressed_len = int.from_bytes(data[4:8], byteorder="little")
-        magic_bytes = data[8:11]
-        save_type = data[11]
-        # Check for magic bytes
-        if magic_bytes != b"PlZ":
-            raise Exception(
-                f"File {save_path} is not a save file, found {magic_bytes} instead of P1Z"
-            )
-        # Valid save types
-        if save_type not in [0x30, 0x31, 0x32]:
-            raise Exception(f"File {save_path} has an unknown save type: {save_type}")
-        # We only have 0x31 (single zlib) and 0x32 (double zlib) saves
-        if save_type not in [0x31, 0x32]:
-            raise Exception(
-                f"File {save_path} uses an unhandled compression type: {save_type}"
-            )
-        if save_type == 0x31:
-            # Check if the compressed length is correct
-            if compressed_len != len(data) - 12:
-                raise Exception(
-                    f"File {save_path} has an incorrect compressed length: {compressed_len}"
-                )
-        # Decompress file
-        uncompressed_data = zlib.decompress(data[12:])
-        if save_type == 0x32:
-            # Check if the compressed length is correct
-            if compressed_len != len(uncompressed_data):
-                raise Exception(
-                    f"File {save_path} has an incorrect compressed length: {compressed_len}"
-                )
-            # Decompress file
-            uncompressed_data = zlib.decompress(uncompressed_data)
-        # Check if the uncompressed length is correct
-        if uncompressed_len != len(uncompressed_data):
-            raise Exception(
-                f"File {save_path} has an incorrect uncompressed length: {uncompressed_len}"
-            )
+        uncompressed_data, _ = decompress_sav_to_gvas(data)
         if os.environ.get("DEBUG", "0") == "1":
             with open(save_path + ".gvas", "wb") as f:
                 f.write(uncompressed_data)
@@ -82,7 +45,7 @@ def convert_to_json(uesave_path: str, save_path: str) -> Dict[str, Any]:
         return json.loads(uesave_run.stdout.decode("utf-8"), cls=NoIndentByteDecoder)
 
 
-def convert_to_save(uesave_path: str, json_path: str, json_blob: Dict[str, Any]):
+def convert_to_sav(uesave_path: str, json_path: str, json_blob: Dict[str, Any]):
     sav_file = json_path[:-5]
     # Convert the file back to binary
     uesave_run = subprocess.run(
@@ -113,17 +76,9 @@ def convert_to_save(uesave_path: str, json_path: str, json_blob: Dict[str, Any])
             save_type = 0x31
 
     data = uesave_run.stdout
-    uncompressed_len = len(data)
-    compressed_data = zlib.compress(data)
-    compressed_len = len(compressed_data)
-    if save_type == 0x32:
-        compressed_data = zlib.compress(compressed_data)
+    compressed_data = compress_gvas_to_sav(data, save_type)
     with open(sav_file, "wb") as f:
-        f.write(uncompressed_len.to_bytes(4, byteorder="little"))
-        f.write(compressed_len.to_bytes(4, byteorder="little"))
-        f.write(b"PlZ")
-        f.write(bytes([save_type]))
-        f.write(bytes(compressed_data))
+        f.write(compressed_data)
     print(f"Converted {json_path} to {sav_file}")
 
 
@@ -148,3 +103,56 @@ def uesave_from_json_params(uesave_path: str) -> list[str]:
         "-",
     ]
     return args
+
+
+def decompress_sav_to_gvas(data: bytes) -> tuple[bytes, int]:
+    uncompressed_len = int.from_bytes(data[0:4], byteorder="little")
+    compressed_len = int.from_bytes(data[4:8], byteorder="little")
+    magic_bytes = data[8:11]
+    save_type = data[11]
+    # Check for magic bytes
+    if magic_bytes != b"PlZ":
+        raise Exception(
+            f"not a compressed Palworld save, found {magic_bytes} instead of P1Z"
+        )
+    # Valid save types
+    if save_type not in [0x30, 0x31, 0x32]:
+        raise Exception(f"unknown save type: {save_type}")
+    # We only have 0x31 (single zlib) and 0x32 (double zlib) saves
+    if save_type not in [0x31, 0x32]:
+        raise Exception(f"unhandled compression type: {save_type}")
+    if save_type == 0x31:
+        # Check if the compressed length is correct
+        if compressed_len != len(data) - 12:
+            raise Exception(f"incorrect compressed length: {compressed_len}")
+    # Decompress file
+    uncompressed_data = zlib.decompress(data[12:])
+    if save_type == 0x32:
+        # Check if the compressed length is correct
+        if compressed_len != len(uncompressed_data):
+            raise Exception(f"incorrect compressed length: {compressed_len}")
+        # Decompress file
+        uncompressed_data = zlib.decompress(uncompressed_data)
+    # Check if the uncompressed length is correct
+    if uncompressed_len != len(uncompressed_data):
+        raise Exception(f"incorrect uncompressed length: {uncompressed_len}")
+
+    return uncompressed_data, save_type
+
+
+def compress_gvas_to_sav(data: bytes, save_type: int) -> bytes:
+    uncompressed_len = len(data)
+    compressed_data = zlib.compress(data)
+    compressed_len = len(compressed_data)
+    if save_type == 0x32:
+        compressed_data = zlib.compress(compressed_data)
+
+    # Create a byte array and append the necessary information
+    result = bytearray()
+    result.extend(uncompressed_len.to_bytes(4, byteorder="little"))
+    result.extend(compressed_len.to_bytes(4, byteorder="little"))
+    result.extend(b"PlZ")
+    result.extend(bytes([save_type]))
+    result.extend(compressed_data)
+
+    return bytes(result)
