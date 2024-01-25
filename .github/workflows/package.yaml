@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Git describe
+        id: ghd
+        uses: proudust/gh-describe@v1
       - shell: bash
         run: mkdir -p dist
       - uses: robinraju/release-downloader@v1.8
@@ -25,10 +28,10 @@ jobs:
           cp -r lib dist/
           cp convenience_tools/* dist/
           cd dist
-          zip -r ../palworld-save-tools-windows.zip *
+          zip -r ../palworld-save-tools-windows-${{steps.ghd.outputs.describe}}.zip *
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: palworld-save-tools-windows.zip
+          files: palworld-save-tools-windows-${{steps.ghd.outputs.describe}}.zip
           generate_release_notes: true
