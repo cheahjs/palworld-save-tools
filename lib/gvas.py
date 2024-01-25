@@ -1,9 +1,9 @@
 from lib.reader import FArchiveReader
 from lib.writer import FArchiveWriter
-from typing import Self
+from typing import Self, Type
 
 
-class GvasReader():
+class GvasReader:
     reader: FArchiveReader
 
     def __init__(self, buffer: bytes):
@@ -12,7 +12,12 @@ class GvasReader():
     def parse(self):
         header = GvasHeader.read(self.reader)
 
-class GvasHeader():
+
+class CustomFormatData:
+    pass
+
+
+class GvasHeader:
     magic: int
     save_game_version: int
     package_file_version_ue4: int
@@ -23,10 +28,10 @@ class GvasHeader():
     engine_version_changelist: int
     engine_version_branch: str
     custom_version_format: int
-    custom_format: Vec<CustomFormatData>
+    custom_format: list[CustomFormatData]
 
     @staticmethod
-    def read(reader: FArchiveReader) -> Self:
+    def read(reader: FArchiveReader) -> "GvasHeader":
         header = GvasHeader()
         # FileTypeTag
         header.magic = reader.read_int32()
@@ -42,14 +47,12 @@ class GvasHeader():
         header.engine_version_minor = reader.read_uint16()
         header.engine_version_patch = reader.read_uint16()
         header.engine_version_changelist = reader.read_uint32()
-        header.engine_version_branch = reader.read_string()
+        header.engine_version_branch = reader.read_fstring()
         # CustomVersionFormat
         header.custom_version_format = reader.read_int32()
         # CustomVersions
-        
+
+        return header
 
     def write(self, writer: FArchiveWriter):
         pass
-
-
-class PackageVersion():
