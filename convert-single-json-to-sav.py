@@ -26,7 +26,7 @@ def main():
     print(f"Loading JSON from {save_path}")
     with open(save_path, "rb") as f:
         data = json.load(f)
-    if 'root' not in data or 'properties' not in data['root']:
+    if "root" not in data or "properties" not in data["root"]:
         print("Invalid JSON file, missing root/properties")
         print("Was this converted with a different tool?")
         print(f"Top level properties: {data.keys()}")

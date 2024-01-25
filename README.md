@@ -17,7 +17,7 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 
 ## Instructions
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Converting `Level.sav` files to JSON will result in very large files, and may require significant amounts of RAM to process. Use a modern text editor such as Visual Studio Code or a Jetbrains IDE to open these files.
 
 ### Prerequisites

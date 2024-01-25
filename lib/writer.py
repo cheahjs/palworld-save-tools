@@ -178,7 +178,7 @@ class FArchiveWriter:
             size = len(array_buf)
             nested_writer.write_bytes(array_buf)
         else:
-            raise Exception(f'Unknown property type: {property_type}')
+            raise Exception(f"Unknown property type: {property_type}")
         buf = nested_writer.bytes()
         # write size
         self.write_uint64(size)
