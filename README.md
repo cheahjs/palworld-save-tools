@@ -1,6 +1,9 @@
 # palworld-save-tools
 Tools for converting PalWorld .sav files to JSON and back.
 
+> [!CAUTION]
+> Any versions older than v0.4 will create corrupt `Level.sav` files when converting from JSON to SAV. Please make sure to update to avoid data corruption.
+
 This tool currently supports additional parsing of the following data not handled by `uesave`:
 
 1. `Level.sav`:`GroupSaveDataMap`
