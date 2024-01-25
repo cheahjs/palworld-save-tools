@@ -5,9 +5,6 @@ This tool currently supports additional parsing of the following data not handle
 
 1. `Level.sav`:`GroupSaveDataMap`
     - Groups such as in-game organizations and guilds
-
-Parsing of the following are temporarily disabled due to ongoing issues:
-
 1. `Level.sav`:`CharacterSaveParameterMap`
     - Characters such as players and pals
 

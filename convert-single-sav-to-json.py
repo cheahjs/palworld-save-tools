@@ -28,8 +28,8 @@ def main():
     if "worldSaveData" in json_blob["root"]["properties"]:
         print("Decoding GroupSaveDataMap")
         decode_group_data(json_blob)
-        # print("Decoding CharacterSaveParameterMap")
-        # decode_character_data(json_blob)
+        print("Decoding CharacterSaveParameterMap")
+        decode_character_data(json_blob)
     output_path = save_path + ".json"
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:

@@ -29,8 +29,8 @@ def main():
     if "worldSaveData" in data["root"]["properties"]:
         print(f"Encoding GroupSaveDataMap")
         encode_group_data(data)
-        # print(f"Encoding CharacterSaveParameterMap")
-        # encode_character_data(data)
+        print(f"Encoding CharacterSaveParameterMap")
+        encode_character_data(data)
     print(f"Converting JSON")
     convert_to_save(uesave_path, save_path, data)
 
