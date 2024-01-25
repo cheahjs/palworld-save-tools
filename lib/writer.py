@@ -136,49 +136,49 @@ class FArchiveWriter:
         self.write_fstring(property["type"])
         nested_writer = FArchiveWriter()
         size: int
-        match property["type"]:
-            case "StructProperty":
-                size = nested_writer.write_struct(property)
-            case "IntProperty":
-                nested_writer.write_optional_uuid(property.get("id", None))
-                nested_writer.write_int32(property["value"])
-                size = 4
-            case "Int64Property":
-                nested_writer.write_optional_uuid(property.get("id", None))
-                nested_writer.write_int64(property["value"])
-                size = 8
-            case "FixedPoint64Property":
-                nested_writer.write_optional_uuid(property.get("id", None))
-                nested_writer.write_int32(property["value"])
-                size = 4
-            case "FloatProperty":
-                nested_writer.write_optional_uuid(property.get("id", None))
-                nested_writer.write_float(property["value"])
-                size = 4
-            case "StrProperty":
-                nested_writer.write_optional_uuid(property.get("id", None))
-                size = nested_writer.write_fstring(property["value"])
-            case "NameProperty":
-                nested_writer.write_optional_uuid(property.get("id", None))
-                size = nested_writer.write_fstring(property["value"])
-            case "EnumProperty":
-                nested_writer.write_fstring(property["value"]["type"])
-                nested_writer.write_optional_uuid(property.get("id", None))
-                size = nested_writer.write_fstring(property["value"]["value"])
-            case "BoolProperty":
-                nested_writer.write_bool(property["value"])
-                nested_writer.write_optional_uuid(property.get("id", None))
-                size = 0
-            case "ArrayProperty":
-                nested_writer.write_fstring(property["array_type"])
-                nested_writer.write_optional_uuid(property.get("id", None))
-                array_writer = FArchiveWriter()
-                array_writer.write_array_property(property["array_type"], property["value"])
-                array_buf = array_writer.bytes()
-                size = len(array_buf)
-                nested_writer.write_bytes(array_buf)
-            case _:
-                raise Exception(f'Unknown property type: {property["type"]}')
+        property_type = property["type"]
+        if property_type == "StructProperty":
+            size = nested_writer.write_struct(property)
+        elif property_type == "IntProperty":
+            nested_writer.write_optional_uuid(property.get("id", None))
+            nested_writer.write_int32(property["value"])
+            size = 4
+        elif property_type == "Int64Property":
+            nested_writer.write_optional_uuid(property.get("id", None))
+            nested_writer.write_int64(property["value"])
+            size = 8
+        elif property_type == "FixedPoint64Property":
+            nested_writer.write_optional_uuid(property.get("id", None))
+            nested_writer.write_int32(property["value"])
+            size = 4
+        elif property_type == "FloatProperty":
+            nested_writer.write_optional_uuid(property.get("id", None))
+            nested_writer.write_float(property["value"])
+            size = 4
+        elif property_type == "StrProperty":
+            nested_writer.write_optional_uuid(property.get("id", None))
+            size = nested_writer.write_fstring(property["value"])
+        elif property_type == "NameProperty":
+            nested_writer.write_optional_uuid(property.get("id", None))
+            size = nested_writer.write_fstring(property["value"])
+        elif property_type == "EnumProperty":
+            nested_writer.write_fstring(property["value"]["type"])
+            nested_writer.write_optional_uuid(property.get("id", None))
+            size = nested_writer.write_fstring(property["value"]["value"])
+        elif property_type == "BoolProperty":
+            nested_writer.write_bool(property["value"])
+            nested_writer.write_optional_uuid(property.get("id", None))
+            size = 0
+        elif property_type == "ArrayProperty":
+            nested_writer.write_fstring(property["array_type"])
+            nested_writer.write_optional_uuid(property.get("id", None))
+            array_writer = FArchiveWriter()
+            array_writer.write_array_property(property["array_type"], property["value"])
+            array_buf = array_writer.bytes()
+            size = len(array_buf)
+            nested_writer.write_bytes(array_buf)
+        else:
+            raise Exception(f'Unknown property type: {property_type}')
         buf = nested_writer.bytes()
         # write size
         self.write_uint64(size)
@@ -234,20 +234,19 @@ class FArchiveWriter:
 
     def write_array_value(self, array_type, count, values):
         for i in range(count):
-            match array_type:
-                case "IntProperty":
-                    self.write_int32(values[i])
-                case "Int64Property":
-                    self.write_int64(values[i])
-                case "FloatProperty":
-                    self.write_float(values[i])
-                case "StrProperty":
-                    self.write_fstring(values[i])
-                case "NameProperty":
-                    self.write_fstring(values[i])
-                case "EnumProperty":
-                    self.write_fstring(values[i])
-                case "BoolProperty":
-                    self.write_bool(values[i])
-                case _:
-                    raise Exception(f"Unknown array type: {array_type}")
+            if array_type == "IntProperty":
+                self.write_int32(values[i])
+            elif array_type == "Int64Property":
+                self.write_int64(values[i])
+            elif array_type == "FloatProperty":
+                self.write_float(values[i])
+            elif array_type == "StrProperty":
+                self.write_fstring(values[i])
+            elif array_type == "NameProperty":
+                self.write_fstring(values[i])
+            elif array_type == "EnumProperty":
+                self.write_fstring(values[i])
+            elif array_type == "BoolProperty":
+                self.write_bool(values[i])
+            else:
+                raise Exception(f"Unknown array type: {array_type}")

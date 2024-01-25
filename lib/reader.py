@@ -136,64 +136,63 @@ class FArchiveReader:
 
     def read_property(self, type_name):
         value = {}
-        match type_name:
-            case "StructProperty":
-                value = self.read_struct()
-            case "IntProperty":
-                value = {
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_int32(),
+        if type_name == "StructProperty":
+            value = self.read_struct()
+        elif type_name == "IntProperty":
+            value = {
+                'id': self.read_optional_uuid(),
+                'value': self.read_int32(),
+            }
+        elif type_name == "Int64Property":
+            value = {
+                'id': self.read_optional_uuid(),
+                'value': self.read_int64(),
+            }
+        elif type_name == "FixedPoint64Property":
+            value = {
+                'id': self.read_optional_uuid(),
+                'value': self.read_int32(),
+            }
+        elif type_name == "FloatProperty":
+            value = {
+                'id': self.read_optional_uuid(),
+                'value': self.read_float(),
+            }
+        elif type_name == "StrProperty":
+            value = {
+                'id': self.read_optional_uuid(),
+                'value': self.read_fstring(),
+            }
+        elif type_name == "NameProperty":
+            value = {
+                'id': self.read_optional_uuid(),
+                'value': self.read_fstring(),
+            }
+        elif type_name == "EnumProperty":
+            enum_type = self.read_fstring()
+            _id = self.read_optional_uuid()
+            enum_value = self.read_fstring()
+            value = {
+                'id': _id,
+                'value': {
+                    'type': enum_type,
+                    'value': enum_value,
                 }
-            case "Int64Property":
-                value = {
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_int64(),
-                }
-            case "FixedPoint64Property":
-                value = {
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_int32(),
-                }
-            case "FloatProperty":
-                value = {
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_float(),
-                }
-            case "StrProperty":
-                value = {
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_fstring(),
-                }
-            case "NameProperty":
-                value = {
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_fstring(),
-                }
-            case "EnumProperty":
-                enum_type = self.read_fstring()
-                _id = self.read_optional_uuid()
-                enum_value = self.read_fstring()
-                value = {
-                    'id': _id,
-                    'value': {
-                        'type': enum_type,
-                        'value': enum_value,
-                    }
-                }
-            case "BoolProperty":
-                value = {
-                    'value': self.read_bool(),
-                    'id': self.read_optional_uuid(),
-                }
-            case "ArrayProperty":
-                array_type = self.read_fstring()
-                value = {
-                    'array_type': array_type,
-                    'id': self.read_optional_uuid(),
-                    'value': self.read_array_property(array_type),
-                }
-            case _:
-                raise Exception(f'Unknown type: {type_name}')
+            }
+        elif type_name == "BoolProperty":
+            value = {
+                'value': self.read_bool(),
+                'id': self.read_optional_uuid(),
+            }
+        elif type_name == "ArrayProperty":
+            array_type = self.read_fstring()
+            value = {
+                'array_type': array_type,
+                'id': self.read_optional_uuid(),
+                'value': self.read_array_property(array_type),
+            }
+        else:
+            raise Exception(f'Unknown type: {type_name}')
         value['type'] = type_name
         return value
 
@@ -262,13 +261,12 @@ class FArchiveReader:
     def read_array_value(self, array_type, count):
         values = []
         for _ in range(count):
-            match array_type:
-                case "EnumProperty":
-                    values.append(self.read_fstring())
-                case "NameProperty":
-                    values.append(self.read_fstring())
-                case "Guid":
-                    values.append(self.read_uuid())
-                case _:
-                    raise Exception(f'Unknown array type: {array_type}')
+            if array_type == "EnumProperty":
+                values.append(self.read_fstring())
+            elif array_type == "NameProperty":
+                values.append(self.read_fstring())
+            elif array_type == "Guid":
+                values.append(self.read_uuid())
+            else:
+                raise Exception(f'Unknown array type: {array_type}')
         return values
