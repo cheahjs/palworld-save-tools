@@ -3,41 +3,44 @@
 import json
 import os
 import sys
+from lib.gvas import GvasFile
 from lib.palsav import *
+from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES
 from lib.rawdata import *
-from lib.writer import *
 
 
 def main():
     # Check if argument exists
-    if len(sys.argv) < 3:
-        print(sys.argv[0] + "<uesave.exe> <path to .sav.json file>")
+    if len(sys.argv) < 2:
+        print(sys.argv[0] + " <path to .sav.json file>")
         exit(1)
-    # Take the first argument as the path to uesave.exe
-    uesave_path = sys.argv[1]
-    if not os.path.exists(uesave_path):
-        print(f"uesave does not exist at {uesave_path}")
-        exit(1)
-    # Take the second argument as a path to a save file
-    save_path = sys.argv[2]
+    # Take the first argument as a path to a save file
+    save_path = sys.argv[1]
     if not os.path.exists(save_path):
         print(f"Path {save_path} does not exist")
         exit(1)
-    print(f"Loading JSON from {save_path}")
-    with open(save_path, "rb") as f:
-        data = json.load(f)
-    if "root" not in data or "properties" not in data["root"]:
-        print("Invalid JSON file, missing root/properties")
-        print("Was this converted with a different tool?")
-        print(f"Top level properties: {data.keys()}")
+    if not os.path.isfile(save_path):
+        print(f"Path {save_path} is not a file")
         exit(1)
-    if "worldSaveData" in data["root"]["properties"]:
-        print(f"Encoding GroupSaveDataMap")
-        encode_group_data(data)
-        print(f"Encoding CharacterSaveParameterMap")
-        encode_character_data(data)
-    print(f"Converting JSON")
-    convert_to_sav(uesave_path, save_path, data)
+    print(f"Loading JSON from {save_path}")
+    with open(save_path, "r", encoding="utf8") as f:
+        data = json.load(f)
+    gvas_file = GvasFile.load(data)
+    print(f"Compressing sav file")
+    if (
+        "Pal.PalWorldSaveGame" in gvas_file.header.save_game_class_name
+        or "Pal.PalLocalWorldSaveGame" in gvas_file.header.save_game_class_name
+    ):
+        save_type = 0x32
+    else:
+        save_type = 0x31
+    sav_file = compress_gvas_to_sav(
+        gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type
+    )
+    output_path = save_path.replace(".json", "")
+    print(f"Converting to .sav and writing to {output_path}")
+    with open(output_path, "wb") as f:
+        f.write(sav_file)
 
 
 if __name__ == "__main__":

@@ -47,14 +47,6 @@ IF NOT EXIST "%~1" (
     EXIT /B 1
 )
 
-:: Check if uesave.exe exists
-IF NOT EXIST "uesave/uesave.exe" (
-    ECHO uesave.exe is missing. Did you download the palworld-save-tools.zip from releases?
-    MKDIR uesave
-    PAUSE
-    EXIT /B 1
-)
-
 ECHO This will convert the save file "%~1" to JSON format.
 CHOICE /C YN /M "Continue?"
 IF %ERRORLEVEL% NEQ 1 (
@@ -62,5 +54,5 @@ IF %ERRORLEVEL% NEQ 1 (
     EXIT /B 1
 )
 
-%PYTHON_BIN% convert-single-sav-to-json.py "uesave/uesave.exe" "%~1"
+%PYTHON_BIN% convert-single-sav-to-json.py "%~1"
 PAUSE

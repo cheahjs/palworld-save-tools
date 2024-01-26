@@ -1,30 +1,25 @@
-import os
-from lib.noindent import NoIndent
-from lib.reader import *
-from lib.writer import *
+from typing import Any
+from lib.archive import *
 
 
-def decode_group_data(level_json):
-    group_map = level_json["root"]["properties"]["worldSaveData"]["Struct"]["value"][
-        "Struct"
-    ]["GroupSaveDataMap"]["Map"]["value"]
+def decode_group_data(
+    reader: FArchiveReader, type_name: str, size: int, path: str
+) -> dict[str, Any]:
+    if type_name != "MapProperty":
+        raise Exception(f"Expected MapProperty, got {type_name}")
+    value = reader.read_property(type_name, size, path, allow_custom=False)
+    # Decode the raw bytes and replace the raw data
+    group_map = value["value"]
     for group in group_map:
-        group_type = group["value"]["Struct"]["Struct"]["GroupType"]["Enum"]["value"]
-        group_bytes = group["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"][
-            "Base"
-        ]["Byte"]["Byte"]
-        if isinstance(group_bytes, NoIndent):
-            group_bytes = group_bytes.value
-        group["value"]["Struct"]["Struct"]["RawData"][
-            "Parsed"
-        ] = decode_group_data_bytes(group_bytes, group_type)
-        if os.environ.get("DEBUG", "0") != "1":
-            del group["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"][
-                "Byte"
-            ]["Byte"]
+        group_type = group["value"]["GroupType"]["value"]["value"]
+        group_bytes = group["value"]["RawData"]["value"]["values"]
+        group["value"]["RawData"]["value"] = decode_group_data_bytes(
+            group_bytes, group_type
+        )
+    return value
 
 
-def decode_group_data_bytes(group_bytes, group_type):
+def decode_group_data_bytes(group_bytes: list[int], group_type: str) -> dict[str, Any]:
     reader = FArchiveReader(bytes(group_bytes))
     group_data = {
         "group_type": group_type,
@@ -77,28 +72,25 @@ def decode_group_data_bytes(group_bytes, group_type):
     return group_data
 
 
-def encode_group_data(level_json):
-    group_map = level_json["root"]["properties"]["worldSaveData"]["Struct"]["value"][
-        "Struct"
-    ]["GroupSaveDataMap"]["Map"]["value"]
+def encode_group_data(
+    writer: FArchiveWriter, property_type: str, properties: dict[str, Any]
+) -> int:
+    if property_type != "MapProperty":
+        raise Exception(f"Expected MapProperty, got {property_type}")
+    del properties["custom_type"]
+    group_map = properties["value"]
     for group in group_map:
-        if "Parsed" not in group["value"]["Struct"]["Struct"]["RawData"]:
+        if "values" in group["value"]["RawData"]["value"]:
             continue
-        p = group["value"]["Struct"]["Struct"]["RawData"]["Parsed"]
-        print(
-            f'Encoding group ID:{p["group_id"]} Type:{p["group_type"]} Name:{p["group_name"]}'
-        )
+        p = group["value"]["RawData"]["value"]
         encoded_bytes = encode_group_data_bytes(p)
-        group["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"]["Byte"][
-            "Byte"
-        ] = [b for b in encoded_bytes]
-        if os.environ.get("DEBUG", "0") != "1":
-            del group["value"]["Struct"]["Struct"]["RawData"]["Parsed"]
+        group["value"]["RawData"]["value"] = {"values": [b for b in encoded_bytes]}
+    return writer.write_property_inner(property_type, properties)
 
 
-def encode_group_data_bytes(p):
+def encode_group_data_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
-    writer.write_uuid_str(p["group_id"])
+    writer.write_uuid(p["group_id"])
     writer.write_fstring(p["group_name"])
     writer.write_tarray(instance_id_writer, p["individual_character_handle_ids"])
     if p["group_type"] in [
@@ -113,42 +105,33 @@ def encode_group_data_bytes(p):
         writer.write_tarray(uuid_writer, p["map_object_instance_ids_base_camp_points"])
         writer.write_fstring(p["guild_name"])
     if p["group_type"] == "EPalGroupType::IndependentGuild":
-        writer.write_uuid_str(p["player_uid"])
+        writer.write_uuid(p["player_uid"])
         writer.write_fstring(p["guild_name_2"])
         writer.write_int64(p["player_info"]["last_online_real_time"])
         writer.write_fstring(p["player_info"]["player_name"])
     if p["group_type"] == "EPalGroupType::Guild":
-        writer.write_uuid_str(p["admin_player_uid"])
+        writer.write_uuid(p["admin_player_uid"])
         writer.write_int32(len(p["players"]))
         for i in range(len(p["players"])):
-            writer.write_uuid_str(p["players"][i]["player_uid"])
+            writer.write_uuid(p["players"][i]["player_uid"])
             writer.write_int64(p["players"][i]["player_info"]["last_online_real_time"])
             writer.write_fstring(p["players"][i]["player_info"]["player_name"])
     encoded_bytes = writer.bytes()
     return encoded_bytes
 
 
-def decode_character_data(level_json):
-    char_map = level_json["root"]["properties"]["worldSaveData"]["Struct"]["value"][
-        "Struct"
-    ]["CharacterSaveParameterMap"]["Map"]["value"]
-    for char in char_map:
-        char_bytes = char["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"][
-            "Base"
-        ]["Byte"]["Byte"]
-        if isinstance(char_bytes, NoIndent):
-            char_bytes = char_bytes.value
-
-        char["value"]["Struct"]["Struct"]["RawData"][
-            "Parsed"
-        ] = decode_character_data_bytes(char_bytes)
-        if os.environ.get("DEBUG", "0") != "1":
-            del char["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"][
-                "Byte"
-            ]["Byte"]
+def decode_character_data(
+    reader: FArchiveReader, type_name: str, size: int, path: str
+) -> dict[str, Any]:
+    if type_name != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {type_name}")
+    value = reader.read_property(type_name, size, path, allow_custom=False)
+    char_bytes = value["value"]["values"]
+    value["value"] = decode_character_data_bytes(char_bytes)
+    return value
 
 
-def decode_character_data_bytes(char_bytes):
+def decode_character_data_bytes(char_bytes: list[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(char_bytes))
     char_data = {}
     char_data["object"] = reader.read_properties_until_end()
@@ -159,33 +142,21 @@ def decode_character_data_bytes(char_bytes):
     return char_data
 
 
-def encode_character_data(level_json):
-    char_map = level_json["root"]["properties"]["worldSaveData"]["Struct"]["value"][
-        "Struct"
-    ]["CharacterSaveParameterMap"]["Map"]["value"]
-    for char in char_map:
-        if "Parsed" not in char["value"]["Struct"]["Struct"]["RawData"]:
-            continue
-        p = char["value"]["Struct"]["Struct"]["RawData"]["Parsed"]
-        char_uid = char["key"]["Struct"]["Struct"]["PlayerUId"]["Struct"]["value"][
-            "Guid"
-        ]
-        char_instance_id = char["key"]["Struct"]["Struct"]["InstanceId"]["Struct"][
-            "value"
-        ]["Guid"]
-        print(f"Encoding character PlayerUId:{char_uid} InstanceId:{char_instance_id}")
-        encoded_bytes = encode_character_data_bytes(p)
-        char["value"]["Struct"]["Struct"]["RawData"]["Array"]["value"]["Base"]["Byte"][
-            "Byte"
-        ] = [b for b in encoded_bytes]
-        if os.environ.get("DEBUG", "0") != "1":
-            del char["value"]["Struct"]["Struct"]["RawData"]["Parsed"]
+def encode_character_data(
+    writer: FArchiveWriter, property_type: str, properties: dict[str, Any]
+) -> int:
+    if property_type != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {property_type}")
+    del properties["custom_type"]
+    encoded_bytes = encode_character_data_bytes(properties["value"])
+    properties["value"] = {"values": [b for b in encoded_bytes]}
+    return writer.write_property_inner(property_type, properties)
 
 
-def encode_character_data_bytes(p):
+def encode_character_data_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
     writer.write_properties(p["object"])
     writer.write_bytes(bytes(p["unknown_bytes"]))
-    writer.write_uuid_str(p["group_id"])
+    writer.write_uuid(p["group_id"])
     encoded_bytes = writer.bytes()
     return encoded_bytes
