@@ -1,7 +1,7 @@
 import io
 import os
 import struct
-from typing import Callable, Self, Union
+from typing import Callable, Union
 import uuid
 
 
