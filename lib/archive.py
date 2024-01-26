@@ -2,6 +2,7 @@ import io
 import os
 import struct
 import uuid
+from typing import Union
 
 PALWORLD_TYPE_HINTS = {
     ".worldSaveData.CharacterContainerSaveData.Key": "StructProperty",
@@ -294,6 +295,8 @@ class FArchiveReader:
             return self.read_fstring()
         elif type_name == "IntProperty":
             return self.read_int32()
+        elif type_name == "BoolProperty":
+            return self.read_bool()
         else:
             raise Exception(f"Unknown property value type: {type_name} ({path})")
 
@@ -326,6 +329,13 @@ class FArchiveReader:
                 "y": self.read_double(),
                 "z": self.read_double(),
                 "w": self.read_double(),
+            }
+        elif struct_type == "LinearColor":
+            return {
+                "r": self.read_float(),
+                "g": self.read_float(),
+                "b": self.read_float(),
+                "a": self.read_float(),
             }
         else:
             if os.environ.get("DEBUG", "0") == "1":
@@ -379,9 +389,12 @@ class FArchiveReader:
         return values
 
 
-def uuid_writer(writer, s):
-    u = uuid.UUID(s)
-    b = u.bytes
+def uuid_writer(writer, s: Union[str, uuid.UUID]):
+    if isinstance(s, str):
+        u = uuid.UUID(s)
+        b = u.bytes
+    else:
+        b = s.bytes
     ub = bytes(
         [
             b[0x3],
@@ -486,7 +499,7 @@ class FArchiveWriter:
     def write_bytes(self, b):
         self.data.write(b)
 
-    def write_uuid_str(self, u):
+    def write_uuid(self, u):
         uuid_writer(self, u)
 
     def write_optional_uuid(self, u):
@@ -581,7 +594,7 @@ class FArchiveWriter:
 
     def write_struct(self, property) -> int:
         self.write_fstring(property["struct_type"])
-        self.write_uuid_str(property["struct_id"])
+        self.write_uuid(property["struct_id"])
         self.write_optional_uuid(property.get("id", None))
         start = self.data.tell()
         self.write_struct_value(property["struct_type"], property["value"])
@@ -595,12 +608,17 @@ class FArchiveWriter:
         elif struct_type == "DateTime":
             self.write_uint64(value)
         elif struct_type == "Guid":
-            self.write_uuid_str(value)
+            self.write_uuid(value)
         elif struct_type == "Quat":
             self.write_double(value["x"])
             self.write_double(value["y"])
             self.write_double(value["z"])
             self.write_double(value["w"])
+        elif struct_type == "LinearColor":
+            self.write_float(value["r"])
+            self.write_float(value["g"])
+            self.write_float(value["b"])
+            self.write_float(value["a"])
         else:
             if os.environ.get("DEBUG", "0") == "1":
                 print(f"Assuming struct type: {struct_type}")
@@ -615,6 +633,8 @@ class FArchiveWriter:
             self.write_fstring(value)
         elif type_name == "IntProperty":
             self.write_int32(value)
+        elif type_name == "BoolProperty":
+            self.write_bool(value)
         else:
             raise Exception(f"Unknown property value type: {type_name}")
 
@@ -630,7 +650,7 @@ class FArchiveWriter:
             data_buf = nested_writer.bytes()
             self.write_uint64(len(data_buf))
             self.write_fstring(value["type_name"])
-            self.write_uuid_str(value["id"])
+            self.write_uuid(value["id"])
             self.write_uint8(0)
             self.write_bytes(data_buf)
         else:

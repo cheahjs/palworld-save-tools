@@ -18,7 +18,7 @@ def custom_version_reader(reader: FArchiveReader):
 
 
 def custom_version_writer(writer: FArchiveWriter, value: tuple[str, int]):
-    writer.write_uuid_str(value[0])
+    writer.write_uuid(value[0])
     writer.write_int32(value[1])
 
 
@@ -147,7 +147,7 @@ class GvasFile:
         return {
             "header": self.header.dump(),
             "properties": self.properties,
-            "trailer": base64.b64encode(self.trailer),
+            "trailer": base64.b64encode(self.trailer).decode("utf-8"),
         }
 
     def write(self) -> bytes:

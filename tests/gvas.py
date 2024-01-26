@@ -1,9 +1,12 @@
 import base64
+import json
 import unittest
 from uuid import UUID
 
-from lib.gvas import GvasHeader
-from lib.reader import FArchiveReader
+from lib.gvas import GvasFile, GvasHeader
+from lib.archive import PALWORLD_TYPE_HINTS, FArchiveReader, FArchiveWriter
+from lib.noindent import CustomEncoder
+from lib.palsav import decompress_sav_to_gvas
 
 
 class TestGvas(unittest.TestCase):
@@ -99,4 +102,114 @@ class TestGvas(unittest.TestCase):
         }
         self.assertEqual(
             header.dump(), expected_header, "header does not match expected"
+        )
+        writer = FArchiveWriter()
+        header.write(writer)
+        self.assertEqual(
+            writer.bytes(), test_data, "header does not match expected after encoding"
+        )
+
+    def test_level_sav(self):
+        with open("tests/testdata/Level.sav", "rb") as f:
+            data = f.read()
+        gvas_data, _ = decompress_sav_to_gvas(data)
+        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        self.assertEqual(
+            gvas_file.header.dump()["save_game_class_name"],
+            "/Script/Pal.PalWorldSaveGame",
+            "sav save_game_class_name does not match expected",
+        )
+        dump = gvas_file.dump()
+        js = json.dumps(dump, cls=CustomEncoder)
+        new_js = json.loads(js)
+        new_gvas_file = GvasFile.load(new_js)
+        new_gvas_data = new_gvas_file.write()
+        self.assertEqual(
+            gvas_data,
+            new_gvas_data,
+            "sav does not match expected after roundtrip",
+        )
+
+    def test_levelmeta_sav(self):
+        with open("tests/testdata/LevelMeta.sav", "rb") as f:
+            data = f.read()
+        gvas_data, _ = decompress_sav_to_gvas(data)
+        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        self.assertEqual(
+            gvas_file.header.dump()["save_game_class_name"],
+            "/Script/Pal.PalWorldBaseInfoSaveGame",
+            "sav save_game_class_name does not match expected",
+        )
+        dump = gvas_file.dump()
+        js = json.dumps(dump, cls=CustomEncoder)
+        new_js = json.loads(js)
+        new_gvas_file = GvasFile.load(new_js)
+        new_gvas_data = new_gvas_file.write()
+        self.assertEqual(
+            gvas_data,
+            new_gvas_data,
+            "sav does not match expected after roundtrip",
+        )
+
+    def test_localdata_sav(self):
+        with open("tests/testdata/LocalData.sav", "rb") as f:
+            data = f.read()
+        gvas_data, _ = decompress_sav_to_gvas(data)
+        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        self.assertEqual(
+            gvas_file.header.dump()["save_game_class_name"],
+            "/Script/Pal.PalLocalWorldSaveGame",
+            "sav save_game_class_name does not match expected",
+        )
+        dump = gvas_file.dump()
+        js = json.dumps(dump, cls=CustomEncoder)
+        new_js = json.loads(js)
+        new_gvas_file = GvasFile.load(new_js)
+        new_gvas_data = new_gvas_file.write()
+        self.assertEqual(
+            gvas_data,
+            new_gvas_data,
+            "sav does not match expected after roundtrip",
+        )
+
+    def test_worldoption_sav(self):
+        with open("tests/testdata/WorldOption.sav", "rb") as f:
+            data = f.read()
+        gvas_data, _ = decompress_sav_to_gvas(data)
+        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        self.assertEqual(
+            gvas_file.header.dump()["save_game_class_name"],
+            "/Script/Pal.PalWorldOptionSaveGame",
+            "save_game_class_name does not match expected",
+        )
+        dump = gvas_file.dump()
+        js = json.dumps(dump, cls=CustomEncoder)
+        new_js = json.loads(js)
+        new_gvas_file = GvasFile.load(new_js)
+        new_gvas_data = new_gvas_file.write()
+        self.assertEqual(
+            gvas_data,
+            new_gvas_data,
+            "sav does not match expected after roundtrip",
+        )
+
+    def test_player_sav(self):
+        with open("tests/testdata/00000000000000000000000000000001.sav", "rb") as f:
+            data = f.read()
+        gvas_data, _ = decompress_sav_to_gvas(data)
+        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        self.assertEqual(
+            gvas_file.header.dump()["save_game_class_name"],
+            "/Script/Pal.PalWorldPlayerSaveGame",
+            "save_game_class_name does not match expected",
+        )
+        dump = gvas_file.dump()
+        js = json.dumps(dump, cls=CustomEncoder)
+        new_js = json.loads(js)
+        new_gvas_file = GvasFile.load(new_js)
+        new_gvas_data = new_gvas_file.write()
+        self.assertEqual(
+            gvas_data,
+            new_gvas_data,
+            "sav does not match expected after roundtrip",
         )

@@ -97,7 +97,7 @@ def encode_group_data(level_json):
 
 def encode_group_data_bytes(p):
     writer = FArchiveWriter()
-    writer.write_uuid_str(p["group_id"])
+    writer.write_uuid(p["group_id"])
     writer.write_fstring(p["group_name"])
     writer.write_tarray(instance_id_writer, p["individual_character_handle_ids"])
     if p["group_type"] in [
@@ -112,15 +112,15 @@ def encode_group_data_bytes(p):
         writer.write_tarray(uuid_writer, p["map_object_instance_ids_base_camp_points"])
         writer.write_fstring(p["guild_name"])
     if p["group_type"] == "EPalGroupType::IndependentGuild":
-        writer.write_uuid_str(p["player_uid"])
+        writer.write_uuid(p["player_uid"])
         writer.write_fstring(p["guild_name_2"])
         writer.write_int64(p["player_info"]["last_online_real_time"])
         writer.write_fstring(p["player_info"]["player_name"])
     if p["group_type"] == "EPalGroupType::Guild":
-        writer.write_uuid_str(p["admin_player_uid"])
+        writer.write_uuid(p["admin_player_uid"])
         writer.write_int32(len(p["players"]))
         for i in range(len(p["players"])):
-            writer.write_uuid_str(p["players"][i]["player_uid"])
+            writer.write_uuid(p["players"][i]["player_uid"])
             writer.write_int64(p["players"][i]["player_info"]["last_online_real_time"])
             writer.write_fstring(p["players"][i]["player_info"]["player_name"])
     encoded_bytes = writer.bytes()
@@ -185,6 +185,6 @@ def encode_character_data_bytes(p):
     writer = FArchiveWriter()
     writer.write_properties(p["object"])
     writer.write_bytes(bytes(p["unknown_bytes"]))
-    writer.write_uuid_str(p["group_id"])
+    writer.write_uuid(p["group_id"])
     encoded_bytes = writer.bytes()
     return encoded_bytes
