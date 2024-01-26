@@ -10,7 +10,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/00000000000000000000000000000001.sav",
                 ]
             )
@@ -27,7 +27,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-json-to-sav.py",
+                    "convert.py",
                     "tests/testdata/00000000000000000000000000000001-2.sav.json",
                 ]
             )
@@ -42,7 +42,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/00000000000000000000000000000001-3.sav",
                 ]
             )
@@ -64,9 +64,7 @@ class TestCliScripts(unittest.TestCase):
 
     def test_level_roundtrip(self):
         try:
-            run = subprocess.run(
-                ["python3", "convert-single-sav-to-json.py", "tests/testdata/Level.sav"]
-            )
+            run = subprocess.run(["python3", "convert.py", "tests/testdata/Level.sav"])
             self.assertEqual(run.returncode, 0)
             self.assertTrue(os.path.exists("tests/testdata/Level.sav.json"))
             os.rename(
@@ -75,7 +73,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-json-to-sav.py",
+                    "convert.py",
                     "tests/testdata/Level-2.sav.json",
                 ]
             )
@@ -85,7 +83,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/Level-3.sav",
                 ]
             )
@@ -106,7 +104,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/LevelMeta.sav",
                 ]
             )
@@ -119,7 +117,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-json-to-sav.py",
+                    "convert.py",
                     "tests/testdata/LevelMeta-2.sav.json",
                 ]
             )
@@ -131,7 +129,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/LevelMeta-3.sav",
                 ]
             )
@@ -152,7 +150,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/LocalData.sav",
                 ]
             )
@@ -165,7 +163,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-json-to-sav.py",
+                    "convert.py",
                     "tests/testdata/LocalData-2.sav.json",
                 ]
             )
@@ -177,7 +175,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/LocalData-3.sav",
                 ]
             )
@@ -198,7 +196,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/WorldOption.sav",
                 ]
             )
@@ -211,7 +209,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-json-to-sav.py",
+                    "convert.py",
                     "tests/testdata/WorldOption-2.sav.json",
                 ]
             )
@@ -223,7 +221,7 @@ class TestCliScripts(unittest.TestCase):
             run = subprocess.run(
                 [
                     "python3",
-                    "convert-single-sav-to-json.py",
+                    "convert.py",
                     "tests/testdata/WorldOption-3.sav",
                 ]
             )

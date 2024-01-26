@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 from lib.archive import *
 
 
@@ -19,7 +19,9 @@ def decode_group_data(
     return value
 
 
-def decode_group_data_bytes(group_bytes: list[int], group_type: str) -> dict[str, Any]:
+def decode_group_data_bytes(
+    group_bytes: Sequence[int], group_type: str
+) -> dict[str, Any]:
     reader = FArchiveReader(bytes(group_bytes))
     group_data = {
         "group_type": group_type,
@@ -131,7 +133,7 @@ def decode_character_data(
     return value
 
 
-def decode_character_data_bytes(char_bytes: list[int]) -> dict[str, Any]:
+def decode_character_data_bytes(char_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(char_bytes))
     char_data = {}
     char_data["object"] = reader.read_properties_until_end()

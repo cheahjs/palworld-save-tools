@@ -30,9 +30,23 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 1. Python 3.9 or newer.
     - Windows users: You can install [Python 3.12 from the Microsoft Store](https://apps.microsoft.com/detail/9NCVDN91XZQP)
 
-### Windows steps
+### Windows GUI steps
 
 1. Download the latest release from [https://github.com/cheahjs/palworld-save-tools/releases/latest].
 1. Unzip the file into a folder.
-1. Drag and drop your `.sav` file (for Steam on Windows, these are located at `%LOCALAPPDATA%\Pal\Saved\SaveGames\<SteamID>\<SaveID>`) onto `convert-single-sav-to-json.cmd`.
-1. To convert the `.sav.json` file back into a `.sav` file, drag and drop your `.sav.json` file onto `convert-single-json-to-sav.cmd`.
+1. Drag and drop your `.sav` file (for Steam on Windows, these are located at `%LOCALAPPDATA%\Pal\Saved\SaveGames\<SteamID>\<SaveID>`) onto `convert.py` to convert the file into JSON.
+1. To convert the `.sav.json` file back into a `.sav` file, drag and drop your `.sav.json` file onto `convert.py`.
+
+### Terminal
+
+1. Download the latest release from [https://github.com/cheahjs/palworld-save-tools/releases/latest].
+1. Unzip the file into a folder.
+1. Run `python3 convert.py <path to .sav file>` to convert the `.sav` file to a `.sav.json` file.
+1. Run `python3 convert.py <path to .json file>` to convert the `.sav.json` file to a `.sav` file.
+
+Additional command line arguments:
+
+1. `--to-json`: Force SAV to JSON conversion regardless of file extension
+1. `--from-json`: Force JSON to SAV converrsion regardless of file extension
+1. `--output`: Override the default output path
+1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
