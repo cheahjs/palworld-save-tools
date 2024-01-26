@@ -2,8 +2,8 @@
 Tools for converting Palworld .sav files to JSON and back.
 
 > [!IMPORTANT]
-> This tool has changed how the JSON files are formatted.
-> You cannot load JSON files created by older versions of the tool (older than v0.9), and other tools that depend on the JSON output of `palworld-save-tools` will break.
+> This tool has changed how the JSON files are formatted starting with v0.9.
+> You cannot load JSON files created by older versions of the tool, and other tools that depend on the JSON output of `palworld-save-tools` will break.
 > In exchange, you will no longer need `uesave-rs`, the tool runs faster, and doesn't use as much RAM.
 
 > [!CAUTION]
