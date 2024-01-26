@@ -1,13 +1,25 @@
-@ECHO OFF
-SETLOCAL enabledelayedexpansion
+@echo off
+setlocal enabledelayedexpansion
 
-:FindPythonCommand
+:: Switch to script directory
+cd /D "%~dp0"
+
+:: Check if convert.py exists
+if not exist "convert.py" (
+    echo convert.py is missing.
+    pause
+    exit /B 1
+)
+
+:: Try every possible Python command until one works
 for %%A in (python3 python py) do (
-    ECHO Checking if Python is installed as %%A
+    echo Checking if Python is installed as %%A
     where %%A
-    if !ERRORLEVEL! EQU 0 (
-        set "PYTHON_BIN=%%A"
-        echo Found Python at !PYTHON_BIN!
+    if !ERRORLEVEL! equ 0 (
+        echo Found Python at %%A
+        echo Python version:
+        %%A --version
+        %%A convert.py "%~1"
         goto :Found
     )
 )
@@ -17,19 +29,4 @@ pause
 exit /B 1
 
 :Found
-@REM Print Python version for debugging
-ECHO Python version:
-!PYTHON_BIN! --version
-
-@REM Switch to script directory
-cd /D "%~dp0"
-
-@REM Check if convert.py exists
-IF NOT EXIST "convert.py" (
-    ECHO convert.py is missing.
-    PAUSE
-    EXIT /B 1
-)
-
-!PYTHON_BIN! convert.py "%~1"
-PAUSE
+pause
