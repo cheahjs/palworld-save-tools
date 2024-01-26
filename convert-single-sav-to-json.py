@@ -3,37 +3,37 @@
 import json
 import os
 import sys
+from lib.gvas import GvasFile
 from lib.noindent import *
 from lib.palsav import *
+from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 from lib.rawdata import *
 
 
 def main():
     # Check if argument exists
-    if len(sys.argv) < 3:
-        print(sys.argv[0] + " <path to uesave.exe> <path to .sav file>")
+    if len(sys.argv) < 2:
+        print(sys.argv[0] + " <path to .sav file>")
         exit(1)
-    # Take the first argument as the path to uesave.exe
-    uesave_path = sys.argv[1]
-    if not os.path.exists(uesave_path):
-        print(f"uesave does not exist at {uesave_path}")
-        exit(1)
-    # Take the second argument as a path to a save file
-    save_path = sys.argv[2]
+    # Take the first argument as a path to a save file
+    save_path = sys.argv[1]
     if not os.path.exists(save_path):
         print(f"Path {save_path} does not exist")
         exit(1)
-    print(f"Converting {save_path} to JSON (using {uesave_path})")
-    json_blob = convert_to_json(uesave_path, save_path)
-    if "worldSaveData" in json_blob["root"]["properties"]:
-        print("Decoding GroupSaveDataMap")
-        decode_group_data(json_blob)
-        print("Decoding CharacterSaveParameterMap")
-        decode_character_data(json_blob)
+    if not os.path.isfile(save_path):
+        print(f"Path {save_path} is not a file")
+        exit(1)
+    print(f"Converting {save_path} to JSON")
+    print(f"Decompressing sav file")
+    with open(save_path, "rb") as f:
+        data = f.read()
+        raw_gvas, _ = decompress_sav_to_gvas(data)
+    print(f"Loading GVAS file")
+    gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
     output_path = save_path + ".json"
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:
-        json.dump(json_blob, f, indent=2, cls=CustomEncoder, ensure_ascii=False)
+        json.dump(gvas_file.dump(), f, indent=2, cls=CustomEncoder, ensure_ascii=False)
 
 
 if __name__ == "__main__":

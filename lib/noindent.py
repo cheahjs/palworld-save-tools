@@ -57,7 +57,9 @@ class NoIndentByteDecoder(json.JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, dct):
-        if "Byte" in dct:
-            if isinstance(dct["Byte"], list):
-                dct["Byte"] = NoIndent(dct["Byte"])
+        if "value" in dct:
+            if "values" in dct["value"]:
+                if isinstance(dct["value"]["values"], list):
+                    if isinstance(dct["value"]["values"][0], int):
+                        dct["value"]["values"] = NoIndent(dct["value"]["values"])
         return dct

@@ -1,38 +1,8 @@
 import io
 import os
 import struct
+from typing import Callable, Self, Union
 import uuid
-from typing import Union
-
-PALWORLD_TYPE_HINTS = {
-    ".worldSaveData.CharacterContainerSaveData.Key": "StructProperty",
-    ".worldSaveData.CharacterSaveParameterMap.Key": "StructProperty",
-    ".worldSaveData.CharacterSaveParameterMap.Value": "StructProperty",
-    ".worldSaveData.FoliageGridSaveDataMap.Key": "StructProperty",
-    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value": "StructProperty",
-    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Key": "StructProperty",
-    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value": "StructProperty",
-    ".worldSaveData.FoliageGridSaveDataMap.Value": "StructProperty",
-    ".worldSaveData.ItemContainerSaveData.Key": "StructProperty",
-    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value": "StructProperty",
-    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.EffectMap.Value": "StructProperty",
-    ".worldSaveData.MapObjectSpawnerInStageSaveData.Key": "StructProperty",
-    ".worldSaveData.MapObjectSpawnerInStageSaveData.Value": "StructProperty",
-    ".worldSaveData.MapObjectSpawnerInStageSaveData.Value.SpawnerDataMapByLevelObjectInstanceId.Key": "Guid",
-    ".worldSaveData.MapObjectSpawnerInStageSaveData.Value.SpawnerDataMapByLevelObjectInstanceId.Value": "StructProperty",
-    ".worldSaveData.MapObjectSpawnerInStageSaveData.Value.SpawnerDataMapByLevelObjectInstanceId.Value.ItemMap.Value": "StructProperty",
-    ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value": "StructProperty",
-    ".worldSaveData.BaseCampSaveData.Key": "Guid",
-    ".worldSaveData.BaseCampSaveData.Value": "StructProperty",
-    ".worldSaveData.BaseCampSaveData.Value.ModuleMap.Value": "StructProperty",
-    ".worldSaveData.ItemContainerSaveData.Value": "StructProperty",
-    ".worldSaveData.CharacterContainerSaveData.Value": "StructProperty",
-    ".worldSaveData.GroupSaveDataMap.Key": "Guid",
-    ".worldSaveData.GroupSaveDataMap.Value": "StructProperty",
-    ".worldSaveData.EnemyCampSaveData.EnemyCampStatusMap.Value": "StructProperty",
-    ".worldSaveData.DungeonSaveData.DungeonSaveData.MapObjectSaveData.MapObjectSaveData.Model.EffectMap.Value": "StructProperty",
-    ".worldSaveData.DungeonSaveData.DungeonSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value": "StructProperty",
-}
 
 
 def instance_id_reader(reader):
@@ -72,12 +42,19 @@ class FArchiveReader:
     data: io.BytesIO
     size: int
     type_hints: dict[str, str]
+    custom_properties: dict[str, tuple[Callable, Callable]]
 
-    def __init__(self, data, type_hints: dict[str, str] = {}):
+    def __init__(
+        self,
+        data,
+        type_hints: dict[str, str] = {},
+        custom_properties: dict[str, tuple[Callable, Callable]] = {},
+    ):
         self.data = io.BytesIO(data)
         self.size = len(self.data.read())
-        self.type_hints = type_hints
         self.data.seek(0)
+        self.type_hints = type_hints
+        self.custom_properties = custom_properties
 
     def __enter__(self):
         self.size = len(self.data.read())
@@ -189,9 +166,12 @@ class FArchiveReader:
             properties[name] = self.read_property(type_name, size, f"{path}.{name}")
         return properties
 
-    def read_property(self, type_name, size, path):
+    def read_property(self, type_name, size, path, allow_custom=True):
         value = {}
-        if type_name == "StructProperty":
+        if allow_custom and path in self.custom_properties:
+            value = self.custom_properties[path][0](self, type_name, size, path)
+            value["custom_type"] = path
+        elif type_name == "StructProperty":
             value = self.read_struct(path)
         elif type_name == "IntProperty":
             value = {
@@ -426,9 +406,11 @@ def instance_id_writer(writer, d):
 class FArchiveWriter:
     data: io.BytesIO
     size: int
+    custom_properties: dict[str, tuple[Callable, Callable]]
 
-    def __init__(self):
+    def __init__(self, custom_properties: dict[str, tuple[Callable, Callable]] = {}):
         self.data = io.BytesIO()
+        self.custom_properties = custom_properties
 
     def __enter__(self):
         self.data.seek(0)
@@ -436,6 +418,9 @@ class FArchiveWriter:
 
     def __exit__(self, type, value, traceback):
         self.data.close()
+
+    def create_nested(self) -> "FArchiveWriter":
+        return FArchiveWriter(self.custom_properties)
 
     def bytes(self):
         pos = self.data.tell()
@@ -523,54 +508,70 @@ class FArchiveWriter:
     def write_property(self, property):
         # write type_name
         self.write_fstring(property["type"])
-        nested_writer = FArchiveWriter()
+        nested_writer = self.create_nested()
         size: int
         property_type = property["type"]
-        if property_type == "StructProperty":
-            size = nested_writer.write_struct(property)
+        size = nested_writer.write_property_inner(property_type, property)
+        buf = nested_writer.bytes()
+        # write size
+        self.write_uint64(size)
+        self.write_bytes(buf)
+
+    def write_property_inner(self, property_type, property) -> int:
+        if "custom_type" in property:
+            if property["custom_type"] in self.custom_properties:
+                size = self.custom_properties[property["custom_type"]][1](
+                    self, property_type, property
+                )
+            else:
+                raise Exception(
+                    f"Unknown custom property type: {property['custom_type']}"
+                )
+        elif property_type == "StructProperty":
+            size = self.write_struct(property)
         elif property_type == "IntProperty":
-            nested_writer.write_optional_uuid(property.get("id", None))
-            nested_writer.write_int32(property["value"])
+            self.write_optional_uuid(property.get("id", None))
+            self.write_int32(property["value"])
             size = 4
         elif property_type == "Int64Property":
-            nested_writer.write_optional_uuid(property.get("id", None))
-            nested_writer.write_int64(property["value"])
+            self.write_optional_uuid(property.get("id", None))
+            self.write_int64(property["value"])
             size = 8
         elif property_type == "FixedPoint64Property":
-            nested_writer.write_optional_uuid(property.get("id", None))
-            nested_writer.write_int32(property["value"])
+            self.write_optional_uuid(property.get("id", None))
+            self.write_int32(property["value"])
             size = 4
         elif property_type == "FloatProperty":
-            nested_writer.write_optional_uuid(property.get("id", None))
-            nested_writer.write_float(property["value"])
+            self.write_optional_uuid(property.get("id", None))
+            self.write_float(property["value"])
             size = 4
         elif property_type == "StrProperty":
-            nested_writer.write_optional_uuid(property.get("id", None))
-            size = nested_writer.write_fstring(property["value"])
+            self.write_optional_uuid(property.get("id", None))
+            size = self.write_fstring(property["value"])
         elif property_type == "NameProperty":
-            nested_writer.write_optional_uuid(property.get("id", None))
-            size = nested_writer.write_fstring(property["value"])
+            self.write_optional_uuid(property.get("id", None))
+            size = self.write_fstring(property["value"])
         elif property_type == "EnumProperty":
-            nested_writer.write_fstring(property["value"]["type"])
-            nested_writer.write_optional_uuid(property.get("id", None))
-            size = nested_writer.write_fstring(property["value"]["value"])
+            self.write_fstring(property["value"]["type"])
+            self.write_optional_uuid(property.get("id", None))
+            size = self.write_fstring(property["value"]["value"])
         elif property_type == "BoolProperty":
-            nested_writer.write_bool(property["value"])
-            nested_writer.write_optional_uuid(property.get("id", None))
+            self.write_bool(property["value"])
+            self.write_optional_uuid(property.get("id", None))
             size = 0
         elif property_type == "ArrayProperty":
-            nested_writer.write_fstring(property["array_type"])
-            nested_writer.write_optional_uuid(property.get("id", None))
-            array_writer = FArchiveWriter()
+            self.write_fstring(property["array_type"])
+            self.write_optional_uuid(property.get("id", None))
+            array_writer = self.create_nested()
             array_writer.write_array_property(property["array_type"], property["value"])
             array_buf = array_writer.bytes()
             size = len(array_buf)
-            nested_writer.write_bytes(array_buf)
+            self.write_bytes(array_buf)
         elif property_type == "MapProperty":
-            nested_writer.write_fstring(property["key_type"])
-            nested_writer.write_fstring(property["value_type"])
-            nested_writer.write_optional_uuid(property.get("id", None))
-            map_writer = FArchiveWriter()
+            self.write_fstring(property["key_type"])
+            self.write_fstring(property["value_type"])
+            self.write_optional_uuid(property.get("id", None))
+            map_writer = self.create_nested()
             map_writer.write_uint32(0)
             map_writer.write_uint32(len(property["value"]))
             for entry in property["value"]:
@@ -584,13 +585,10 @@ class FArchiveWriter:
                 )
             map_buf = map_writer.bytes()
             size = len(map_buf)
-            nested_writer.write_bytes(map_buf)
+            self.write_bytes(map_buf)
         else:
             raise Exception(f"Unknown property type: {property_type}")
-        buf = nested_writer.bytes()
-        # write size
-        self.write_uint64(size)
-        self.write_bytes(buf)
+        return size
 
     def write_struct(self, property) -> int:
         self.write_fstring(property["struct_type"])
@@ -644,7 +642,7 @@ class FArchiveWriter:
         if array_type == "StructProperty":
             self.write_fstring(value["prop_name"])
             self.write_fstring(value["prop_type"])
-            nested_writer = FArchiveWriter()
+            nested_writer = self.create_nested()
             for i in range(count):
                 nested_writer.write_struct_value(value["type_name"], value["values"][i])
             data_buf = nested_writer.bytes()

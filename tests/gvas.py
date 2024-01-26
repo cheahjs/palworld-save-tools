@@ -4,9 +4,10 @@ import unittest
 from uuid import UUID
 
 from lib.gvas import GvasFile, GvasHeader
-from lib.archive import PALWORLD_TYPE_HINTS, FArchiveReader, FArchiveWriter
+from lib.archive import FArchiveReader, FArchiveWriter
 from lib.noindent import CustomEncoder
 from lib.palsav import decompress_sav_to_gvas
+from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 
 
 class TestGvas(unittest.TestCase):
@@ -113,7 +114,9 @@ class TestGvas(unittest.TestCase):
         with open("tests/testdata/Level.sav", "rb") as f:
             data = f.read()
         gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        gvas_file = GvasFile.read(
+            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
+        )
         self.assertEqual(
             gvas_file.header.dump()["save_game_class_name"],
             "/Script/Pal.PalWorldSaveGame",
@@ -123,7 +126,7 @@ class TestGvas(unittest.TestCase):
         js = json.dumps(dump, cls=CustomEncoder)
         new_js = json.loads(js)
         new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write()
+        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
         self.assertEqual(
             gvas_data,
             new_gvas_data,
@@ -134,7 +137,9 @@ class TestGvas(unittest.TestCase):
         with open("tests/testdata/LevelMeta.sav", "rb") as f:
             data = f.read()
         gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        gvas_file = GvasFile.read(
+            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
+        )
         self.assertEqual(
             gvas_file.header.dump()["save_game_class_name"],
             "/Script/Pal.PalWorldBaseInfoSaveGame",
@@ -144,7 +149,7 @@ class TestGvas(unittest.TestCase):
         js = json.dumps(dump, cls=CustomEncoder)
         new_js = json.loads(js)
         new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write()
+        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
         self.assertEqual(
             gvas_data,
             new_gvas_data,
@@ -155,7 +160,9 @@ class TestGvas(unittest.TestCase):
         with open("tests/testdata/LocalData.sav", "rb") as f:
             data = f.read()
         gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        gvas_file = GvasFile.read(
+            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
+        )
         self.assertEqual(
             gvas_file.header.dump()["save_game_class_name"],
             "/Script/Pal.PalLocalWorldSaveGame",
@@ -165,7 +172,7 @@ class TestGvas(unittest.TestCase):
         js = json.dumps(dump, cls=CustomEncoder)
         new_js = json.loads(js)
         new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write()
+        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
         self.assertEqual(
             gvas_data,
             new_gvas_data,
@@ -176,7 +183,9 @@ class TestGvas(unittest.TestCase):
         with open("tests/testdata/WorldOption.sav", "rb") as f:
             data = f.read()
         gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        gvas_file = GvasFile.read(
+            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
+        )
         self.assertEqual(
             gvas_file.header.dump()["save_game_class_name"],
             "/Script/Pal.PalWorldOptionSaveGame",
@@ -186,7 +195,7 @@ class TestGvas(unittest.TestCase):
         js = json.dumps(dump, cls=CustomEncoder)
         new_js = json.loads(js)
         new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write()
+        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
         self.assertEqual(
             gvas_data,
             new_gvas_data,
@@ -197,7 +206,9 @@ class TestGvas(unittest.TestCase):
         with open("tests/testdata/00000000000000000000000000000001.sav", "rb") as f:
             data = f.read()
         gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS)
+        gvas_file = GvasFile.read(
+            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
+        )
         self.assertEqual(
             gvas_file.header.dump()["save_game_class_name"],
             "/Script/Pal.PalWorldPlayerSaveGame",
@@ -207,7 +218,7 @@ class TestGvas(unittest.TestCase):
         js = json.dumps(dump, cls=CustomEncoder)
         new_js = json.loads(js)
         new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write()
+        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
         self.assertEqual(
             gvas_data,
             new_gvas_data,

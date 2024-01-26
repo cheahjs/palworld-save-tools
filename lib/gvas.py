@@ -1,16 +1,6 @@
 import base64
-from lib.archive import PALWORLD_TYPE_HINTS, FArchiveReader, FArchiveWriter
-from typing import Any
-
-
-class GvasReader:
-    reader: FArchiveReader
-
-    def __init__(self, buffer: bytes):
-        self.reader = FArchiveReader(buffer)
-
-    def parse(self):
-        header = GvasHeader.read(self.reader)
+from lib.archive import FArchiveReader, FArchiveWriter
+from typing import Any, Callable
 
 
 def custom_version_reader(reader: FArchiveReader):
@@ -123,9 +113,13 @@ class GvasFile:
     trailer: bytes
 
     @staticmethod
-    def read(data: bytes, type_hints: dict[str, str] = {}) -> "GvasFile":
+    def read(
+        data: bytes,
+        type_hints: dict[str, str] = {},
+        custom_properties: dict[str, tuple[Callable, Callable]] = {},
+    ) -> "GvasFile":
         gvas_file = GvasFile()
-        reader = FArchiveReader(data, type_hints)
+        reader = FArchiveReader(data, type_hints, custom_properties)
         gvas_file.header = GvasHeader.read(reader)
         gvas_file.properties = reader.read_properties_until_end()
         gvas_file.trailer = reader.read_to_end()
@@ -150,8 +144,10 @@ class GvasFile:
             "trailer": base64.b64encode(self.trailer).decode("utf-8"),
         }
 
-    def write(self) -> bytes:
-        writer = FArchiveWriter()
+    def write(
+        self, custom_properties: dict[str, tuple[Callable, Callable]] = {}
+    ) -> bytes:
+        writer = FArchiveWriter(custom_properties)
         self.header.write(writer)
         writer.write_properties(self.properties)
         writer.write_bytes(self.trailer)
