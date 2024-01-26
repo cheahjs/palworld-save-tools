@@ -16,28 +16,38 @@ pause
 exit /B 1
 
 :Found
-@REM Print Python version for debugging
+:: Print Python version for debugging
 ECHO Python version:
 %PYTHON_BIN% --version
 
-@REM Switch to script directory
+:: Check that the minor version of python is at least 9.
+FOR /F "tokens=1,2 delims=." %%G IN ('%PYTHON_BIN% --version') DO (
+   SET PYTHON_VERSION_MINOR=%%H
+)
+
+IF %PYTHON_VERSION_MINOR% LSS 9 (
+  ECHO Python 3.9 or higher is required.
+  EXIT /B 1
+)
+
+:: Switch to script directory
 cd /D "%~dp0"
 
-@REM Check if convert-single-json-to-sav.py exists
+:: Check if convert-single-json-to-sav.py exists
 IF NOT EXIST "convert-single-json-to-sav.py" (
     ECHO convert-single-json-to-sav.py is missing.
     PAUSE
     EXIT /B 1
 )
 
-@REM Check if first argument exists
+:: Check if first argument exists
 IF NOT EXIST "%~1" (
     ECHO You must specify a .sav file to convert.
     PAUSE
     EXIT /B 1
 )
 
-@REM Check if uesave.exe exists
+:: Check if uesave.exe exists
 IF NOT EXIST "uesave/uesave.exe" (
     ECHO uesave.exe is missing. Did you download the palworld-save-tools.zip from releases?
     MKDIR uesave
@@ -48,7 +58,7 @@ IF NOT EXIST "uesave/uesave.exe" (
 ECHO This will convert the save file "%~1" in JSON format in back to .sav format.
 ECHO This will overwrite your existing .sav file!
 ECHO Please make a backup of your .sav file before continuing!
-@REM Ask user if they want to continue
+:: Ask user if they want to continue
 CHOICE /C YN /M "Continue?"
 IF %ERRORLEVEL% NEQ 1 (
     ECHO Exiting because aborted.
