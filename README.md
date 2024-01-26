@@ -22,7 +22,7 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 
 ### Prerequisites
 
-1. Python. This can be installed from the Windows Store.
+1. Python 3.9 or newer. You can install [Python 3.12 from the Microsoft Store](https://apps.microsoft.com/detail/9NCVDN91XZQP)
 
 ### Windows steps
 
