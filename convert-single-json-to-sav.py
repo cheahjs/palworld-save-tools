@@ -23,7 +23,7 @@ def main():
         print(f"Path {save_path} is not a file")
         exit(1)
     print(f"Loading JSON from {save_path}")
-    with open(save_path, "r") as f:
+    with open(save_path, "r", encoding="utf8") as f:
         data = json.load(f)
     gvas_file = GvasFile.load(data)
     print(f"Compressing sav file")
