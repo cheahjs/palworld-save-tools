@@ -5,7 +5,6 @@ import os
 import sys
 from lib.palsav import *
 from lib.rawdata import *
-from lib.writer import *
 
 
 def main():

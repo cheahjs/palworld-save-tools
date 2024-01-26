@@ -1,7 +1,6 @@
 import os
 from lib.noindent import NoIndent
-from lib.reader import *
-from lib.writer import *
+from lib.archive import *
 
 
 def decode_group_data(level_json):
