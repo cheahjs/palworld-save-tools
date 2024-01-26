@@ -99,6 +99,63 @@ class TestCliScripts(unittest.TestCase):
             with contextlib.suppress(FileNotFoundError):
                 os.remove("tests/testdata/Level-3.sav.json")
 
+    def test_level_tricky_unicode_player_name_roundtrip(self):
+        try:
+            run = subprocess.run(
+                [
+                    "python3",
+                    "convert.py",
+                    "tests/testdata/Level-tricky-unicode-player-name.sav",
+                ]
+            )
+            self.assertEqual(run.returncode, 0)
+            self.assertTrue(
+                os.path.exists(
+                    "tests/testdata/Level-tricky-unicode-player-name.sav.json"
+                )
+            )
+            os.rename(
+                "tests/testdata/Level-tricky-unicode-player-name.sav.json",
+                "tests/testdata/Level-tricky-unicode-player-name-2.sav.json",
+            )
+            run = subprocess.run(
+                [
+                    "python3",
+                    "convert.py",
+                    "tests/testdata/Level-tricky-unicode-player-name-2.sav.json",
+                ]
+            )
+            self.assertEqual(run.returncode, 0)
+            self.assertTrue(
+                os.path.exists("tests/testdata/Level-tricky-unicode-player-name-2.sav")
+            )
+            os.rename(
+                "tests/testdata/Level-tricky-unicode-player-name-2.sav",
+                "tests/testdata/Level-tricky-unicode-player-name-3.sav",
+            )
+            run = subprocess.run(
+                [
+                    "python3",
+                    "convert.py",
+                    "tests/testdata/Level-tricky-unicode-player-name-3.sav",
+                ]
+            )
+            self.assertEqual(run.returncode, 0)
+            self.assertTrue(
+                os.path.exists(
+                    "tests/testdata/Level-tricky-unicode-player-name-3.sav.json"
+                )
+            )
+        finally:
+            with contextlib.suppress(FileNotFoundError):
+                os.remove("tests/testdata/Level-tricky-unicode-player-name.sav.json")
+            with contextlib.suppress(FileNotFoundError):
+                os.remove("tests/testdata/Level-tricky-unicode-player-name-2.sav.json")
+            with contextlib.suppress(FileNotFoundError):
+                os.remove("tests/testdata/Level-tricky-unicode-player-name-3.sav")
+            with contextlib.suppress(FileNotFoundError):
+                os.remove("tests/testdata/Level-tricky-unicode-player-name-3.sav.json")
+
     def test_levelmeta_roundtrip(self):
         try:
             run = subprocess.run(

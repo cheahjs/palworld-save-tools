@@ -78,9 +78,7 @@ def convert_sav_to_json(filename, output_path, minify):
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:
         indent = None if minify else "\t"
-        json.dump(
-            gvas_file.dump(), f, indent=indent, cls=CustomEncoder, ensure_ascii=False
-        )
+        json.dump(gvas_file.dump(), f, indent=indent, cls=CustomEncoder)
 
 
 def convert_json_to_sav(filename, output_path):
