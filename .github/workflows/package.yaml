@@ -20,6 +20,11 @@ jobs:
           cp convenience_tools/* dist/
           cd dist
           zip -r ../palworld-save-tools-windows-${{steps.ghd.outputs.describe}}.zip *
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: palworld-save-tools-windows-${{steps.ghd.outputs.describe}}.zip
+        
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
