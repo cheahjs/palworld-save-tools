@@ -17,3 +17,6 @@ Please download the `palworld-save-tools-windows.zip` file from [releases](https
 
 **Describe the bug**
 A clear and concise description of what the bug is.
+
+**Copy of .sav or .sav.json files**
+If possible, attach the .sav or .sav.json file. Add to a zip file to compress it down from gigabytes down to megabytes to make it manageable.
