@@ -24,7 +24,7 @@ jobs:
         with:
           name: dist
           path: palworld-save-tools-windows-${{steps.ghd.outputs.describe}}.zip
-        
+
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
