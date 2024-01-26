@@ -51,7 +51,7 @@ ECHO Please make a backup of your .sav file before continuing!
 @REM Ask user if they want to continue
 CHOICE /C YN /M "Continue?"
 IF %ERRORLEVEL% NEQ 1 (
-    ECHO Exiting because aborted. (Errorlevel %ERRORLEVEL%)
+    ECHO Exiting because aborted.
     EXIT /B 1
 )
 
