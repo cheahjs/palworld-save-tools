@@ -96,18 +96,20 @@ class FArchiveReader:
         if size == 0:
             return ""
 
+        data: bytes
+        encoding: str
         if LoadUCS2Char:
-            data = []
-            for i in range(size):
-                if i == size - 1:
-                    self.read_uint16()
-                else:
-                    data.append(self.read_uint16())
-            string = "".join([chr(v) for v in data])
-            return string
+            data = self.read(size * 2)[:-2]
+            encoding = "utf-16-le"
         else:
-            byte = self.data.read(size)[:-1]
-            return byte.decode("utf-8")
+            data = self.read(size)[:-1]
+            encoding = "ascii"
+        try:
+            return data.decode(encoding)
+        except Exception as e:
+            raise Exception(
+                f"Error decoding {encoding} string of length {size}: {bytes(data)}"
+            ) from e
 
     def read_int16(self):
         return struct.unpack("h", self.data.read(2))[0]
