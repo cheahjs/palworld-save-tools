@@ -38,7 +38,7 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 1. To convert the `.sav.json` file back into a `.sav` file, drag and drop your `.sav.json` file onto `convert.cmd`.
 
 > [!NOTE]
-> In the event that the `convert.cmd` fails to function correctly, please use the [Terminal](#terminal) instructions below
+> In the event that the `convert.cmd` fails to function correctly, try to disable Python's app execution aliases ("Manage app execution aliases"), or failing that, please use the [Terminal](#terminal) instructions below
 
 ### Terminal
 
