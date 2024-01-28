@@ -127,10 +127,7 @@ class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter:
     value: Optional[ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value]
     type: str
     def __post_init__(self):
-        try:
-            self.value = ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value(**self.value)
-        except Exception as e:
-            raise e
+        self.value = ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value(**self.value)
 
 @dataclass
 class ICSPMap_Value_Value_RawData_Value_Object:

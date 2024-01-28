@@ -9,14 +9,12 @@ def dataclass_to_dict(instance):
     if isinstance(instance, list):
         return [dataclass_to_dict(item) for item in instance]
     elif is_dataclass(instance):
-        # None이 아닌 값만 포함하도록 수정
         return {
             key: dataclass_to_dict(getattr(instance, key)) 
             for key in instance.__dataclass_fields__ 
             if getattr(instance, key) is not None
         }
     elif isinstance(instance, dict):
-        # None이 아닌 값만 포함하도록 수정
         return {
             key: dataclass_to_dict(value) 
             for key, value in instance.items() 

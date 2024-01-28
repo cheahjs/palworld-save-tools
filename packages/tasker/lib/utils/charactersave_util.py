@@ -31,6 +31,3 @@ def getRawPlayers(inputLevel: LevelSav):
         if rawCharData.IsPlayer :
             players.append(rawChar)
     return players
-
-def deleteCharById(charId: str, inputLevel: LevelSav):
-    pass

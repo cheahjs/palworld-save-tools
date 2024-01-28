@@ -104,5 +104,3 @@ class IGSDMap:
 
 RawGroupDataList = List[IGSDMap_Value]
 RawGroupData = IGSDMap_Value
-# RawCharKey = ICSPMap_Value_Key
-# RawCharDetailData = ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value
