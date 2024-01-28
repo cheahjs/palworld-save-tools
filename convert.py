@@ -56,10 +56,6 @@ def main():
             output_path = args.filename.replace(".json", "")
         else:
             output_path = args.output
-        if os.path.exists(output_path):
-            print(f"{output_path} already exists, this will overwrite the file")
-            if not confirm_prompt("Are you sure you want to continue?"):
-                exit(1)
         convert_json_to_sav(args.filename, output_path)
 
 
