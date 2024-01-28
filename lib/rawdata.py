@@ -163,3 +163,107 @@ def encode_character_data_bytes(p: dict[str, Any]) -> bytes:
     writer.guid(p["group_id"])
     encoded_bytes = writer.bytes()
     return encoded_bytes
+
+
+def decode_debug(
+    reader: FArchiveReader, type_name: str, size: int, path: str
+) -> dict[str, Any]:
+    if type_name != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {type_name}")
+    value = reader.read_property(type_name, size, path, allow_custom=False)
+    debug_bytes = value["value"]["values"]
+    print("".join(f"{b:02x}" for b in debug_bytes))
+    return value
+
+
+def encode_debug(
+    writer: FArchiveWriter, property_type: str, properties: dict[str, Any]
+) -> int:
+    if property_type != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {property_type}")
+    del properties["custom_type"]
+    return writer.write_property_inner(property_type, properties)
+
+
+def decode_build_process(
+    reader: FArchiveReader, type_name: str, size: int, path: str
+) -> dict[str, Any]:
+    if type_name != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {type_name}")
+    value = reader.read_property(type_name, size, path, allow_custom=False)
+    data_bytes = value["value"]["values"]
+    value["value"] = decode_build_process_bytes(data_bytes)
+    return value
+
+
+def decode_build_process_bytes(char_bytes: Sequence[int]) -> dict[str, Any]:
+    reader = FArchiveReader(bytes(char_bytes))
+    data = {}
+    data["state"] = reader.read_byte()
+    data["id"] = reader.read_uuid()
+    if not reader.eof():
+        raise Exception("Warning: EOF not reached")
+    return data
+
+
+def encode_build_process(
+    writer: FArchiveWriter, property_type: str, properties: dict[str, Any]
+) -> int:
+    if property_type != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {property_type}")
+    del properties["custom_type"]
+    encoded_bytes = encode_build_process_bytes(properties["value"])
+    properties["value"] = {"values": [b for b in encoded_bytes]}
+    return writer.write_property_inner(property_type, properties)
+
+
+def encode_build_process_bytes(p: dict[str, Any]) -> bytes:
+    writer = FArchiveWriter()
+    writer.write_byte(p["state"])
+    writer.write_uuid(p["id"])
+    encoded_bytes = writer.bytes()
+    return encoded_bytes
+
+
+def decode_connector(
+    reader: FArchiveReader, type_name: str, size: int, path: str
+) -> dict[str, Any]:
+    if type_name != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {type_name}")
+    value = reader.read_property(type_name, size, path, allow_custom=False)
+    data_bytes = value["value"]["values"]
+    value["value"] = decode_connector_bytes(data_bytes)
+    return value
+
+
+def decode_connector_bytes(char_bytes: Sequence[int]) -> dict[str, Any]:
+    if len(char_bytes) == 0:
+        return None
+    reader = FArchiveReader(bytes(char_bytes))
+    data = {}
+    data["supported_level"] = reader.read_int32()
+    data["id"] = reader.read_uuid()
+    if not reader.eof():
+        raise Exception("Warning: EOF not reached")
+    return data
+
+
+def encode_connector(
+    writer: FArchiveWriter, property_type: str, properties: dict[str, Any]
+) -> int:
+    if property_type != "ArrayProperty":
+        raise Exception(f"Expected ArrayProperty, got {property_type}")
+    del properties["custom_type"]
+    encoded_bytes = encode_connector_bytes(properties["value"])
+    properties["value"] = {"values": [b for b in encoded_bytes]}
+    return writer.write_property_inner(property_type, properties)
+
+
+def encode_connector_bytes(p: dict[str, Any]) -> bytes:
+    if p is None:
+        return bytes()
+    writer = FArchiveWriter()
+    writer.write_byte(p["state"])
+    writer.write_uuid(p["id"])
+    encoded_bytes = writer.bytes()
+    return encoded_bytes

@@ -1,6 +1,6 @@
 from lib.rawdata import *
 
-PALWORLD_TYPE_HINTS = {
+PALWORLD_TYPE_HINTS: dict[str, str] = {
     ".worldSaveData.CharacterContainerSaveData.Key": "StructProperty",
     ".worldSaveData.CharacterSaveParameterMap.Key": "StructProperty",
     ".worldSaveData.CharacterSaveParameterMap.Value": "StructProperty",
@@ -30,14 +30,26 @@ PALWORLD_TYPE_HINTS = {
     ".worldSaveData.DungeonSaveData.DungeonSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value": "StructProperty",
 }
 
-PALWORLD_CUSTOM_PROPERTIES = {
+PALWORLD_CUSTOM_PROPERTIES: dict[
+    str,
+    tuple[
+        Callable[[FArchiveReader, str, int, str], dict[str, Any]],
+        Callable[[FArchiveWriter, str, dict[str, Any]], int],
+    ],
+] = {
     ".worldSaveData.GroupSaveDataMap": (decode_group_data, encode_group_data),
     ".worldSaveData.CharacterSaveParameterMap.Value.RawData": (
         decode_character_data,
         encode_character_data,
     ),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.BuildProcess.RawData": (),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (),
+    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.BuildProcess.RawData": (
+        decode_build_process,
+        encode_build_process,
+    ),
+    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (
+        decode_debug,
+        encode_debug,
+    ),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
