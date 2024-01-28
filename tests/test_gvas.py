@@ -3,8 +3,8 @@ import json
 import unittest
 from uuid import UUID
 
-from lib.gvas import GvasFile, GvasHeader
 from lib.archive import FArchiveReader, FArchiveWriter
+from lib.gvas import GvasFile, GvasHeader
 from lib.noindent import CustomEncoder
 from lib.palsav import decompress_sav_to_gvas
 from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
