@@ -1,0 +1,3 @@
+# These are dependencies only for tests
+# Default usage of the library must not rely on any external dependencies!
+parameterized==0.9.0
