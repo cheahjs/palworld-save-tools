@@ -2,18 +2,18 @@ import io
 import os
 import struct
 import uuid
-from typing import Callable, Union
+from typing import Any, Callable, Optional, Union
 
 
-def instance_id_reader(reader):
+def instance_id_reader(reader: "FArchiveReader"):
     return {
-        "guid": reader.read_uuid(),
-        "instance_id": reader.read_uuid(),
+        "guid": reader.guid(),
+        "instance_id": reader.guid(),
     }
 
 
-def uuid_reader(reader):
-    b = reader.read_bytes(16)
+def uuid_reader(reader: "FArchiveReader"):
+    b = reader.read(16)
     return uuid.UUID(
         bytes=bytes(
             [
@@ -71,20 +71,20 @@ class FArchiveReader:
             print(f"Struct type for {path} not found, assuming {default}")
             return default
 
-    def eof(self):
+    def eof(self) -> bool:
         return self.data.tell() >= self.size
 
-    def read(self, size: int):
+    def read(self, size: int) -> bytes:
         return self.data.read(size)
 
-    def read_to_end(self):
+    def read_to_end(self) -> bytes:
         return self.data.read(self.size - self.data.tell())
 
-    def read_bool(self):
-        return self.read_byte() > 0
+    def bool(self) -> bool:
+        return self.byte() > 0
 
-    def read_fstring(self):
-        size = self.read_int32()
+    def fstring(self) -> str:
+        size = self.i32()
         LoadUCS2Char: bool = size < 0
 
         if LoadUCS2Char:
@@ -107,108 +107,119 @@ class FArchiveReader:
         try:
             return data.decode(encoding)
         except Exception as e:
-            raise Exception(
-                f"Error decoding {encoding} string of length {size}: {bytes(data)}"
-            ) from e
+            try:
+                escaped = data.decode(encoding, errors="surrogatepass")
+                print(
+                    f"Error decoding {encoding} string of length {size}, data loss may occur! {bytes(data)}"
+                )
+                return escaped
+            except Exception as e:
+                raise Exception(
+                    f"Error decoding {encoding} string of length {size}: {bytes(data)}"
+                ) from e
 
-    def read_int16(self):
+    def i16(self) -> int:
         return struct.unpack("h", self.data.read(2))[0]
 
-    def read_uint16(self):
+    def u16(self) -> int:
         return struct.unpack("H", self.data.read(2))[0]
 
-    def read_int32(self):
+    def i32(self) -> int:
         return struct.unpack("i", self.data.read(4))[0]
 
-    def read_uint32(self):
+    def u32(self) -> int:
         return struct.unpack("I", self.data.read(4))[0]
 
-    def read_int64(self):
+    def i64(self) -> int:
         return struct.unpack("q", self.data.read(8))[0]
 
-    def read_uint64(self):
+    def u64(self) -> int:
         return struct.unpack("Q", self.data.read(8))[0]
 
-    def read_float(self):
+    def float(self) -> float:
         return struct.unpack("f", self.data.read(4))[0]
 
-    def read_double(self):
+    def double(self) -> float:
         return struct.unpack("d", self.data.read(8))[0]
 
-    def read_byte(self):
+    def byte(self) -> int:
         return struct.unpack("B", self.data.read(1))[0]
 
-    def read_bytes(self, size: int):
+    def byte_list(self, size: int) -> list[int]:
         return struct.unpack(str(size) + "B", self.data.read(size))
 
-    def skip(self, size: int):
+    def skip(self, size: int) -> None:
         self.data.read(size)
 
-    def read_uuid(self):
+    def guid(self) -> uuid.UUID:
         return uuid_reader(self)
 
-    def read_optional_uuid(self):
-        return uuid_reader(self) if self.read_bool() else None
+    def optional_guid(self) -> Optional[uuid.UUID]:
+        return uuid_reader(self) if self.bool() else None
 
-    def read_tarray(self, type_reader):
-        count = self.read_uint32()
+    def tarray(
+        self, type_reader: Callable[["FArchiveReader"], dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        count = self.u32()
         array = []
         for _ in range(count):
             array.append(type_reader(self))
         return array
 
-    def read_properties_until_end(self, path=""):
+    def properties_until_end(self, path: str = "") -> dict[str, Any]:
         properties = {}
         while True:
-            name = self.read_fstring()
+            name = self.fstring()
             if name == "None":
                 break
-            type_name = self.read_fstring()
-            size = self.read_uint64()
-            properties[name] = self.read_property(type_name, size, f"{path}.{name}")
+            type_name = self.fstring()
+            size = self.u64()
+            properties[name] = self.property(type_name, size, f"{path}.{name}")
         return properties
 
-    def read_property(self, type_name, size, path, allow_custom=True):
+    def property(
+        self, type_name: str, size: int, path: str, allow_custom: bool = True
+    ) -> dict[str, Any]:
         value = {}
         if allow_custom and path in self.custom_properties:
             value = self.custom_properties[path][0](self, type_name, size, path)
             value["custom_type"] = path
         elif type_name == "StructProperty":
-            value = self.read_struct(path)
+            value = self.struct(path)
         elif type_name == "IntProperty":
             value = {
-                "id": self.read_optional_uuid(),
-                "value": self.read_int32(),
+                "id": self.optional_guid(),
+                "value": self.i32(),
             }
         elif type_name == "Int64Property":
             value = {
-                "id": self.read_optional_uuid(),
-                "value": self.read_int64(),
+                "id": self.optional_guid(),
+                "value": self.i64(),
             }
         elif type_name == "FixedPoint64Property":
             value = {
-                "id": self.read_optional_uuid(),
-                "value": self.read_int32(),
+                "id": self.optional_guid(),
+                "value": self.i32(),
             }
         elif type_name == "FloatProperty":
             value = {
-                "id": self.read_optional_uuid(),
-                "value": self.read_float(),
+                "id": self.optional_guid(),
+                "value": self.float(),
             }
         elif type_name == "StrProperty":
             value = {
-                "id": self.read_optional_uuid(),
-                "value": self.read_fstring(),
+                "id": self.optional_guid(),
+                "value": self.fstring(),
             }
         elif type_name == "NameProperty":
             value = {
-                "id": self.read_optional_uuid(),
-                "value": self.read_fstring(),
+                "id": self.optional_guid(),
+                "value": self.fstring(),
             }
         elif type_name == "EnumProperty":
-            enum_type = self.read_fstring()
-            _id = self.read_optional_uuid()
-            enum_value = self.read_fstring()
+            enum_type = self.fstring()
+            _id = self.optional_guid()
+            enum_value = self.fstring()
             value = {
                 "id": _id,
                 "value": {
@@ -218,22 +229,22 @@ class FArchiveReader:
             }
         elif type_name == "BoolProperty":
             value = {
-                "value": self.read_bool(),
-                "id": self.read_optional_uuid(),
+                "value": self.bool(),
+                "id": self.optional_guid(),
             }
         elif type_name == "ArrayProperty":
-            array_type = self.read_fstring()
+            array_type = self.fstring()
             value = {
                 "array_type": array_type,
-                "id": self.read_optional_uuid(),
-                "value": self.read_array_property(array_type, size - 4, path),
+                "id": self.optional_guid(),
+                "value": self.array_property(array_type, size - 4, path),
             }
         elif type_name == "MapProperty":
-            key_type = self.read_fstring()
-            value_type = self.read_fstring()
-            _id = self.read_optional_uuid()
-            self.read_uint32()
-            count = self.read_uint32()
+            key_type = self.fstring()
+            value_type = self.fstring()
+            _id = self.optional_guid()
+            self.u32()
+            count = self.u32()
             values = {}
             key_path = path + ".Key"
             if key_type == "StructProperty":
@@ -247,8 +258,8 @@ class FArchiveReader:
                 value_struct_type = None
             values = []
             for _ in range(count):
-                key = self.read_prop_value(key_type, key_struct_type, key_path)
-                value = self.read_prop_value(value_type, value_struct_type, value_path)
+                key = self.prop_value(key_type, key_struct_type, key_path)
+                value = self.prop_value(value_type, value_struct_type, value_path)
                 values.append(
                     {
                         "key": key,
@@ -268,25 +279,25 @@ class FArchiveReader:
         value["type"] = type_name
         return value
 
-    def read_prop_value(self, type_name, struct_type_name, path):
+    def prop_value(self, type_name: str, struct_type_name: str, path: str):
         if type_name == "StructProperty":
-            return self.read_struct_value(struct_type_name, path)
+            return self.struct_value(struct_type_name, path)
         elif type_name == "EnumProperty":
-            return self.read_fstring()
+            return self.fstring()
         elif type_name == "NameProperty":
-            return self.read_fstring()
+            return self.fstring()
         elif type_name == "IntProperty":
-            return self.read_int32()
+            return self.i32()
         elif type_name == "BoolProperty":
-            return self.read_bool()
+            return self.bool()
         else:
             raise Exception(f"Unknown property value type: {type_name} ({path})")
 
-    def read_struct(self, path):
-        struct_type = self.read_fstring()
-        struct_id = self.read_uuid()
-        _id = self.read_optional_uuid()
-        value = self.read_struct_value(struct_type, path)
+    def struct(self, path: str) -> dict[str, Any]:
+        struct_type = self.fstring()
+        struct_id = self.guid()
+        _id = self.optional_guid()
+        value = self.struct_value(struct_type, path)
         return {
             "struct_type": struct_type,
             "struct_id": struct_id,
@@ -294,51 +305,49 @@ class FArchiveReader:
             "value": value,
         }
 
-    def read_struct_value(self, struct_type, path=""):
+    def struct_value(self, struct_type: str, path: str = ""):
         if struct_type == "Vector":
             return {
-                "x": self.read_double(),
-                "y": self.read_double(),
-                "z": self.read_double(),
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
             }
         elif struct_type == "DateTime":
-            return self.read_uint64()
+            return self.u64()
         elif struct_type == "Guid":
-            return self.read_uuid()
+            return self.guid()
         elif struct_type == "Quat":
             return {
-                "x": self.read_double(),
-                "y": self.read_double(),
-                "z": self.read_double(),
-                "w": self.read_double(),
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+                "w": self.double(),
             }
         elif struct_type == "LinearColor":
             return {
-                "r": self.read_float(),
-                "g": self.read_float(),
-                "b": self.read_float(),
-                "a": self.read_float(),
+                "r": self.float(),
+                "g": self.float(),
+                "b": self.float(),
+                "a": self.float(),
             }
         else:
             if os.environ.get("DEBUG", "0") == "1":
                 print(f"Assuming struct type: {struct_type} ({path})")
-            return self.read_properties_until_end(path)
+            return self.properties_until_end(path)
 
-    def read_array_property(self, array_type, size, path):
-        count = self.read_uint32()
+    def array_property(self, array_type: str, size: int, path: str):
+        count = self.u32()
         value = {}
         if array_type == "StructProperty":
-            prop_name = self.read_fstring()
-            prop_type = self.read_fstring()
-            self.read_uint64()
-            type_name = self.read_fstring()
-            _id = self.read_uuid()
+            prop_name = self.fstring()
+            prop_type = self.fstring()
+            self.u64()
+            type_name = self.fstring()
+            _id = self.guid()
             self.skip(1)
             prop_values = []
             for _ in range(count):
-                prop_values.append(
-                    self.read_struct_value(type_name, f"{path}.{prop_name}")
-                )
+                prop_values.append(self.struct_value(type_name, f"{path}.{prop_name}"))
             value = {
                 "prop_name": prop_name,
                 "prop_type": prop_type,
@@ -348,22 +357,22 @@ class FArchiveReader:
             }
         else:
             value = {
-                "values": self.read_array_value(array_type, count, size, path),
+                "values": self.array_value(array_type, count, size, path),
             }
         return value
 
-    def read_array_value(self, array_type, count, size, path):
+    def array_value(self, array_type: str, count: int, size: int, path: str):
         values = []
         for _ in range(count):
             if array_type == "EnumProperty":
-                values.append(self.read_fstring())
+                values.append(self.fstring())
             elif array_type == "NameProperty":
-                values.append(self.read_fstring())
+                values.append(self.fstring())
             elif array_type == "Guid":
-                values.append(self.read_uuid())
+                values.append(self.guid())
             elif array_type == "ByteProperty":
                 if size == count:
-                    values.append(self.read_byte())
+                    values.append(self.byte())
                 else:
                     raise Exception("Labelled ByteProperty not implemented")
             else:
@@ -421,105 +430,105 @@ class FArchiveWriter:
     def __exit__(self, type, value, traceback):
         self.data.close()
 
-    def create_nested(self) -> "FArchiveWriter":
+    def copy(self) -> "FArchiveWriter":
         return FArchiveWriter(self.custom_properties)
 
-    def bytes(self):
+    def bytes(self) -> bytes:
         pos = self.data.tell()
         self.data.seek(0)
         b = self.data.read()
         self.data.seek(pos)
         return b
 
-    def write(self, data):
+    def write(self, data: bytes):
         self.data.write(data)
 
-    def write_bool(self, bool):
+    def bool(self, bool: bool):
         self.data.write(struct.pack("?", bool))
 
-    def write_fstring(self, string) -> int:
+    def fstring(self, string: str) -> int:
         start = self.data.tell()
         if string == "":
-            self.write_int32(0)
+            self.i32(0)
         elif string.isascii():
-            str_bytes = string.encode("utf-8")
-            self.write_int32(len(string) + 1)
+            str_bytes = string.encode("ascii")
+            self.i32(len(str_bytes) + 1)
             self.data.write(str_bytes)
             self.data.write(b"\x00")
         else:
-            str_bytes = string.encode("utf-16-le")
-            self.write_int32(-(len(string) + 1))
+            str_bytes = string.encode("utf-16-le", errors="surrogatepass")
+            assert len(str_bytes) % 2 == 0
+            self.i32(-((len(str_bytes) // 2) + 1))
             self.data.write(str_bytes)
             self.data.write(b"\x00\x00")
         return self.data.tell() - start
 
-    def write_int16(self, i):
+    def i16(self, i: int):
         self.data.write(struct.pack("h", i))
 
-    def write_uint16(self, i):
+    def u16(self, i: int):
         self.data.write(struct.pack("H", i))
 
-    def write_int32(self, i):
+    def i32(self, i: int):
         self.data.write(struct.pack("i", i))
 
-    def write_uint32(self, i):
+    def u32(self, i: int):
         self.data.write(struct.pack("I", i))
 
-    def write_int64(self, i):
+    def i64(self, i: int):
         self.data.write(struct.pack("q", i))
 
-    def write_uint64(self, i):
+    def u64(self, i: int):
         self.data.write(struct.pack("Q", i))
 
-    def write_float(self, i):
+    def float(self, i: float):
         self.data.write(struct.pack("f", i))
 
-    def write_double(self, i):
+    def double(self, i: float):
         self.data.write(struct.pack("d", i))
 
-    def write_byte(self, b):
+    def byte(self, b: int):
         self.data.write(bytes([b]))
 
-    def write_uint8(self, b):
+    def u(self, b: int):
         self.data.write(struct.pack("B", b))
 
-    def write_bytes(self, b):
-        self.data.write(b)
-
-    def write_uuid(self, u):
+    def guid(self, u: Union[str, uuid.UUID]):
         uuid_writer(self, u)
 
-    def write_optional_uuid(self, u):
+    def optional_uuid(self, u: Optional[Union[str, uuid.UUID]]):
         if u is None:
-            self.write_bool(False)
+            self.bool(False)
         else:
-            self.write_bool(True)
+            self.bool(True)
             uuid_writer(self, u)
 
-    def write_tarray(self, type_writer, array):
-        self.write_uint32(len(array))
+    def tarray(
+        self, type_writer: Callable[["FArchiveWriter", dict[str, Any]], None], array
+    ):
+        self.u32(len(array))
         for i in range(len(array)):
             type_writer(self, array[i])
 
-    def write_properties(self, properties):
+    def properties(self, properties: dict[str, Any]):
         for key in properties:
-            self.write_fstring(key)
-            self.write_property(properties[key])
-        self.write_fstring("None")
+            self.fstring(key)
+            self.property(properties[key])
+        self.fstring("None")
 
-    def write_property(self, property):
+    def property(self, property: dict[str, Any]):
         # write type_name
-        self.write_fstring(property["type"])
-        nested_writer = self.create_nested()
+        self.fstring(property["type"])
+        nested_writer = self.copy()
         size: int
         property_type = property["type"]
-        size = nested_writer.write_property_inner(property_type, property)
+        size = nested_writer.property_inner(property_type, property)
         buf = nested_writer.bytes()
         # write size
-        self.write_uint64(size)
-        self.write_bytes(buf)
+        self.u64(size)
+        self.write(buf)
 
-    def write_property_inner(self, property_type, property) -> int:
+    def property_inner(self, property_type: str, property: dict[str, Any]) -> int:
         if "custom_type" in property:
             if property["custom_type"] in self.custom_properties:
                 size = self.custom_properties[property["custom_type"]][1](
@@ -530,149 +539,149 @@ class FArchiveWriter:
                     f"Unknown custom property type: {property['custom_type']}"
                 )
         elif property_type == "StructProperty":
-            size = self.write_struct(property)
+            size = self.struct(property)
         elif property_type == "IntProperty":
-            self.write_optional_uuid(property.get("id", None))
-            self.write_int32(property["value"])
+            self.optional_uuid(property.get("id", None))
+            self.i32(property["value"])
             size = 4
         elif property_type == "Int64Property":
-            self.write_optional_uuid(property.get("id", None))
-            self.write_int64(property["value"])
+            self.optional_uuid(property.get("id", None))
+            self.i64(property["value"])
             size = 8
         elif property_type == "FixedPoint64Property":
-            self.write_optional_uuid(property.get("id", None))
-            self.write_int32(property["value"])
+            self.optional_uuid(property.get("id", None))
+            self.i32(property["value"])
             size = 4
         elif property_type == "FloatProperty":
-            self.write_optional_uuid(property.get("id", None))
-            self.write_float(property["value"])
+            self.optional_uuid(property.get("id", None))
+            self.float(property["value"])
             size = 4
         elif property_type == "StrProperty":
-            self.write_optional_uuid(property.get("id", None))
-            size = self.write_fstring(property["value"])
+            self.optional_uuid(property.get("id", None))
+            size = self.fstring(property["value"])
         elif property_type == "NameProperty":
-            self.write_optional_uuid(property.get("id", None))
-            size = self.write_fstring(property["value"])
+            self.optional_uuid(property.get("id", None))
+            size = self.fstring(property["value"])
         elif property_type == "EnumProperty":
-            self.write_fstring(property["value"]["type"])
-            self.write_optional_uuid(property.get("id", None))
-            size = self.write_fstring(property["value"]["value"])
+            self.fstring(property["value"]["type"])
+            self.optional_uuid(property.get("id", None))
+            size = self.fstring(property["value"]["value"])
         elif property_type == "BoolProperty":
-            self.write_bool(property["value"])
-            self.write_optional_uuid(property.get("id", None))
+            self.bool(property["value"])
+            self.optional_uuid(property.get("id", None))
             size = 0
         elif property_type == "ArrayProperty":
-            self.write_fstring(property["array_type"])
-            self.write_optional_uuid(property.get("id", None))
-            array_writer = self.create_nested()
-            array_writer.write_array_property(property["array_type"], property["value"])
+            self.fstring(property["array_type"])
+            self.optional_uuid(property.get("id", None))
+            array_writer = self.copy()
+            array_writer.array_property(property["array_type"], property["value"])
             array_buf = array_writer.bytes()
             size = len(array_buf)
-            self.write_bytes(array_buf)
+            self.write(array_buf)
         elif property_type == "MapProperty":
-            self.write_fstring(property["key_type"])
-            self.write_fstring(property["value_type"])
-            self.write_optional_uuid(property.get("id", None))
-            map_writer = self.create_nested()
-            map_writer.write_uint32(0)
-            map_writer.write_uint32(len(property["value"]))
+            self.fstring(property["key_type"])
+            self.fstring(property["value_type"])
+            self.optional_uuid(property.get("id", None))
+            map_writer = self.copy()
+            map_writer.u32(0)
+            map_writer.u32(len(property["value"]))
             for entry in property["value"]:
-                map_writer.write_prop_value(
+                map_writer.prop_value(
                     property["key_type"], property["key_struct_type"], entry["key"]
                 )
-                map_writer.write_prop_value(
+                map_writer.prop_value(
                     property["value_type"],
                     property["value_struct_type"],
                     entry["value"],
                 )
             map_buf = map_writer.bytes()
             size = len(map_buf)
-            self.write_bytes(map_buf)
+            self.write(map_buf)
         else:
             raise Exception(f"Unknown property type: {property_type}")
         return size
 
-    def write_struct(self, property) -> int:
-        self.write_fstring(property["struct_type"])
-        self.write_uuid(property["struct_id"])
-        self.write_optional_uuid(property.get("id", None))
+    def struct(self, property: dict[str, Any]) -> int:
+        self.fstring(property["struct_type"])
+        self.guid(property["struct_id"])
+        self.optional_uuid(property.get("id", None))
         start = self.data.tell()
-        self.write_struct_value(property["struct_type"], property["value"])
+        self.struct_value(property["struct_type"], property["value"])
         return self.data.tell() - start
 
-    def write_struct_value(self, struct_type, value):
+    def struct_value(self, struct_type: str, value):
         if struct_type == "Vector":
-            self.write_double(value["x"])
-            self.write_double(value["y"])
-            self.write_double(value["z"])
+            self.double(value["x"])
+            self.double(value["y"])
+            self.double(value["z"])
         elif struct_type == "DateTime":
-            self.write_uint64(value)
+            self.u64(value)
         elif struct_type == "Guid":
-            self.write_uuid(value)
+            self.guid(value)
         elif struct_type == "Quat":
-            self.write_double(value["x"])
-            self.write_double(value["y"])
-            self.write_double(value["z"])
-            self.write_double(value["w"])
+            self.double(value["x"])
+            self.double(value["y"])
+            self.double(value["z"])
+            self.double(value["w"])
         elif struct_type == "LinearColor":
-            self.write_float(value["r"])
-            self.write_float(value["g"])
-            self.write_float(value["b"])
-            self.write_float(value["a"])
+            self.float(value["r"])
+            self.float(value["g"])
+            self.float(value["b"])
+            self.float(value["a"])
         else:
             if os.environ.get("DEBUG", "0") == "1":
                 print(f"Assuming struct type: {struct_type}")
-            return self.write_properties(value)
+            return self.properties(value)
 
-    def write_prop_value(self, type_name, struct_type_name, value):
+    def prop_value(self, type_name: str, struct_type_name: str, value):
         if type_name == "StructProperty":
-            self.write_struct_value(struct_type_name, value)
+            self.struct_value(struct_type_name, value)
         elif type_name == "EnumProperty":
-            self.write_fstring(value)
+            self.fstring(value)
         elif type_name == "NameProperty":
-            self.write_fstring(value)
+            self.fstring(value)
         elif type_name == "IntProperty":
-            self.write_int32(value)
+            self.i32(value)
         elif type_name == "BoolProperty":
-            self.write_bool(value)
+            self.bool(value)
         else:
             raise Exception(f"Unknown property value type: {type_name}")
 
-    def write_array_property(self, array_type, value):
+    def array_property(self, array_type: str, value: dict[str, Any]):
         count = len(value["values"])
-        self.write_uint32(count)
+        self.u32(count)
         if array_type == "StructProperty":
-            self.write_fstring(value["prop_name"])
-            self.write_fstring(value["prop_type"])
-            nested_writer = self.create_nested()
+            self.fstring(value["prop_name"])
+            self.fstring(value["prop_type"])
+            nested_writer = self.copy()
             for i in range(count):
-                nested_writer.write_struct_value(value["type_name"], value["values"][i])
+                nested_writer.struct_value(value["type_name"], value["values"][i])
             data_buf = nested_writer.bytes()
-            self.write_uint64(len(data_buf))
-            self.write_fstring(value["type_name"])
-            self.write_uuid(value["id"])
-            self.write_uint8(0)
-            self.write_bytes(data_buf)
+            self.u64(len(data_buf))
+            self.fstring(value["type_name"])
+            self.guid(value["id"])
+            self.u(0)
+            self.write(data_buf)
         else:
-            self.write_array_value(array_type, count, value["values"])
+            self.array_value(array_type, count, value["values"])
 
-    def write_array_value(self, array_type, count, values):
+    def array_value(self, array_type: str, count: int, values: list[Any]):
         for i in range(count):
             if array_type == "IntProperty":
-                self.write_int32(values[i])
+                self.i32(values[i])
             elif array_type == "Int64Property":
-                self.write_int64(values[i])
+                self.i64(values[i])
             elif array_type == "FloatProperty":
-                self.write_float(values[i])
+                self.float(values[i])
             elif array_type == "StrProperty":
-                self.write_fstring(values[i])
+                self.fstring(values[i])
             elif array_type == "NameProperty":
-                self.write_fstring(values[i])
+                self.fstring(values[i])
             elif array_type == "EnumProperty":
-                self.write_fstring(values[i])
+                self.fstring(values[i])
             elif array_type == "BoolProperty":
-                self.write_bool(values[i])
+                self.bool(values[i])
             elif array_type == "ByteProperty":
-                self.write_byte(values[i])
+                self.byte(values[i])
             else:
                 raise Exception(f"Unknown array type: {array_type}")

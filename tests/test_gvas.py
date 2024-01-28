@@ -123,6 +123,14 @@ class TestGvas(unittest.TestCase):
                 "00000000000000000000000000000001.sav",
                 "/Script/Pal.PalWorldPlayerSaveGame",
             ),
+            ("unicode-saves/Level.sav", "/Script/Pal.PalWorldSaveGame"),
+            ("unicode-saves/LevelMeta.sav", "/Script/Pal.PalWorldBaseInfoSaveGame"),
+            ("unicode-saves/LocalData.sav", "/Script/Pal.PalLocalWorldSaveGame"),
+            ("unicode-saves/WorldOption.sav", "/Script/Pal.PalWorldOptionSaveGame"),
+            (
+                "unicode-saves/00000000000000000000000000000001.sav",
+                "/Script/Pal.PalWorldPlayerSaveGame",
+            ),
         ]
     )
     def test_sav_roundtrip(self, file_name, expected_save_game_class_name):
