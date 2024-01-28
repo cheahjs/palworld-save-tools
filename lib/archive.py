@@ -107,9 +107,16 @@ class FArchiveReader:
         try:
             return data.decode(encoding)
         except Exception as e:
-            raise Exception(
-                f"Error decoding {encoding} string of length {size}: {bytes(data)}"
-            ) from e
+            try:
+                escaped = data.decode(encoding, errors="surrogatepass")
+                print(
+                    f"Error decoding {encoding} string of length {size}, data loss may occur! {bytes(data)}"
+                )
+                return escaped
+            except Exception as e:
+                raise Exception(
+                    f"Error decoding {encoding} string of length {size}: {bytes(data)}"
+                ) from e
 
     def i16(self) -> int:
         return struct.unpack("h", self.data.read(2))[0]
@@ -449,7 +456,7 @@ class FArchiveWriter:
             self.data.write(str_bytes)
             self.data.write(b"\x00")
         else:
-            str_bytes = string.encode("utf-16-le")
+            str_bytes = string.encode("utf-16-le", errors="surrogatepass")
             assert len(str_bytes) % 2 == 0
             self.i32(-((len(str_bytes) // 2) + 1))
             self.data.write(str_bytes)
