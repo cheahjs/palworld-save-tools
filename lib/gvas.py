@@ -5,12 +5,12 @@ from lib.archive import FArchiveReader, FArchiveWriter
 
 
 def custom_version_reader(reader: FArchiveReader):
-    return (reader.read_uuid(), reader.read_int32())
+    return (reader.guid(), reader.i32())
 
 
 def custom_version_writer(writer: FArchiveWriter, value: tuple[str, int]):
-    writer.write_uuid(value[0])
-    writer.write_int32(value[1])
+    writer.guid(value[0])
+    writer.i32(value[1])
 
 
 class GvasHeader:
@@ -31,33 +31,33 @@ class GvasHeader:
     def read(reader: FArchiveReader) -> "GvasHeader":
         header = GvasHeader()
         # FileTypeTag
-        header.magic = reader.read_int32()
+        header.magic = reader.i32()
         if header.magic != 0x53415647:
             raise Exception("invalid magic")
         # SaveGameFileVersion
-        header.save_game_version = reader.read_int32()
+        header.save_game_version = reader.i32()
         if header.save_game_version != 3:
             raise Exception(
                 f"expected save game version 3, got {header.save_game_version}"
             )
         # PackageFileUEVersion
-        header.package_file_version_ue4 = reader.read_int32()
-        header.package_file_version_ue5 = reader.read_int32()
+        header.package_file_version_ue4 = reader.i32()
+        header.package_file_version_ue5 = reader.i32()
         # SavedEngineVersion
-        header.engine_version_major = reader.read_uint16()
-        header.engine_version_minor = reader.read_uint16()
-        header.engine_version_patch = reader.read_uint16()
-        header.engine_version_changelist = reader.read_uint32()
-        header.engine_version_branch = reader.read_fstring()
+        header.engine_version_major = reader.u16()
+        header.engine_version_minor = reader.u16()
+        header.engine_version_patch = reader.u16()
+        header.engine_version_changelist = reader.u32()
+        header.engine_version_branch = reader.fstring()
         # CustomVersionFormat
-        header.custom_version_format = reader.read_int32()
+        header.custom_version_format = reader.i32()
         if header.custom_version_format != 3:
             raise Exception(
                 f"expected custom version format 3, got {header.custom_version_format}"
             )
         # CustomVersions
-        header.custom_versions = reader.read_tarray(custom_version_reader)
-        header.save_game_class_name = reader.read_fstring()
+        header.custom_versions = reader.tarray(custom_version_reader)
+        header.save_game_class_name = reader.fstring()
         return header
 
     @staticmethod
@@ -94,18 +94,18 @@ class GvasHeader:
         }
 
     def write(self, writer: FArchiveWriter):
-        writer.write_int32(self.magic)
-        writer.write_int32(self.save_game_version)
-        writer.write_int32(self.package_file_version_ue4)
-        writer.write_int32(self.package_file_version_ue5)
-        writer.write_uint16(self.engine_version_major)
-        writer.write_uint16(self.engine_version_minor)
-        writer.write_uint16(self.engine_version_patch)
-        writer.write_uint32(self.engine_version_changelist)
-        writer.write_fstring(self.engine_version_branch)
-        writer.write_int32(self.custom_version_format)
-        writer.write_tarray(custom_version_writer, self.custom_versions)
-        writer.write_fstring(self.save_game_class_name)
+        writer.i32(self.magic)
+        writer.i32(self.save_game_version)
+        writer.i32(self.package_file_version_ue4)
+        writer.i32(self.package_file_version_ue5)
+        writer.u16(self.engine_version_major)
+        writer.u16(self.engine_version_minor)
+        writer.u16(self.engine_version_patch)
+        writer.u32(self.engine_version_changelist)
+        writer.fstring(self.engine_version_branch)
+        writer.i32(self.custom_version_format)
+        writer.tarray(custom_version_writer, self.custom_versions)
+        writer.fstring(self.save_game_class_name)
 
 
 class GvasFile:
@@ -122,7 +122,7 @@ class GvasFile:
         gvas_file = GvasFile()
         reader = FArchiveReader(data, type_hints, custom_properties)
         gvas_file.header = GvasHeader.read(reader)
-        gvas_file.properties = reader.read_properties_until_end()
+        gvas_file.properties = reader.properties_until_end()
         gvas_file.trailer = reader.read_to_end()
         if gvas_file.trailer != b"\x00\x00\x00\x00":
             print(
@@ -150,6 +150,6 @@ class GvasFile:
     ) -> bytes:
         writer = FArchiveWriter(custom_properties)
         self.header.write(writer)
-        writer.write_properties(self.properties)
-        writer.write_bytes(self.trailer)
+        writer.properties(self.properties)
+        writer.write(self.trailer)
         return writer.bytes()
