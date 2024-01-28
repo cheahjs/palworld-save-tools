@@ -3,6 +3,8 @@ import json
 import unittest
 from uuid import UUID
 
+from parameterized import parameterized
+
 from lib.archive import FArchiveReader, FArchiveWriter
 from lib.gvas import GvasFile, GvasHeader
 from lib.noindent import CustomEncoder
@@ -110,8 +112,21 @@ class TestGvas(unittest.TestCase):
             writer.bytes(), test_data, "header does not match expected after encoding"
         )
 
-    def test_level_sav(self):
-        with open("tests/testdata/Level.sav", "rb") as f:
+    @parameterized.expand(
+        [
+            ("Level.sav", "/Script/Pal.PalWorldSaveGame"),
+            ("Level-tricky-unicode-player-name.sav", "/Script/Pal.PalWorldSaveGame"),
+            ("LevelMeta.sav", "/Script/Pal.PalWorldBaseInfoSaveGame"),
+            ("LocalData.sav", "/Script/Pal.PalLocalWorldSaveGame"),
+            ("WorldOption.sav", "/Script/Pal.PalWorldOptionSaveGame"),
+            (
+                "00000000000000000000000000000001.sav",
+                "/Script/Pal.PalWorldPlayerSaveGame",
+            ),
+        ]
+    )
+    def test_sav_roundtrip(self, file_name, expected_save_game_class_name):
+        with open("tests/testdata/" + file_name, "rb") as f:
             data = f.read()
         gvas_data, _ = decompress_sav_to_gvas(data)
         gvas_file = GvasFile.read(
@@ -119,123 +134,8 @@ class TestGvas(unittest.TestCase):
         )
         self.assertEqual(
             gvas_file.header.dump()["save_game_class_name"],
-            "/Script/Pal.PalWorldSaveGame",
+            expected_save_game_class_name,
             "sav save_game_class_name does not match expected",
-        )
-        dump = gvas_file.dump()
-        js = json.dumps(dump, cls=CustomEncoder)
-        new_js = json.loads(js)
-        new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
-        self.assertEqual(
-            gvas_data,
-            new_gvas_data,
-            "sav does not match expected after roundtrip",
-        )
-
-    def test_level_tricky_unicode_sav(self):
-        with open("tests/testdata/Level-tricky-unicode-player-name.sav", "rb") as f:
-            data = f.read()
-        gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(
-            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
-        )
-        self.assertEqual(
-            gvas_file.header.dump()["save_game_class_name"],
-            "/Script/Pal.PalWorldSaveGame",
-            "sav save_game_class_name does not match expected",
-        )
-        dump = gvas_file.dump()
-        js = json.dumps(dump, cls=CustomEncoder)
-        new_js = json.loads(js)
-        new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
-        self.assertEqual(
-            gvas_data,
-            new_gvas_data,
-            "sav does not match expected after roundtrip",
-        )
-
-    def test_levelmeta_sav(self):
-        with open("tests/testdata/LevelMeta.sav", "rb") as f:
-            data = f.read()
-        gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(
-            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
-        )
-        self.assertEqual(
-            gvas_file.header.dump()["save_game_class_name"],
-            "/Script/Pal.PalWorldBaseInfoSaveGame",
-            "sav save_game_class_name does not match expected",
-        )
-        dump = gvas_file.dump()
-        js = json.dumps(dump, cls=CustomEncoder)
-        new_js = json.loads(js)
-        new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
-        self.assertEqual(
-            gvas_data,
-            new_gvas_data,
-            "sav does not match expected after roundtrip",
-        )
-
-    def test_localdata_sav(self):
-        with open("tests/testdata/LocalData.sav", "rb") as f:
-            data = f.read()
-        gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(
-            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
-        )
-        self.assertEqual(
-            gvas_file.header.dump()["save_game_class_name"],
-            "/Script/Pal.PalLocalWorldSaveGame",
-            "sav save_game_class_name does not match expected",
-        )
-        dump = gvas_file.dump()
-        js = json.dumps(dump, cls=CustomEncoder)
-        new_js = json.loads(js)
-        new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
-        self.assertEqual(
-            gvas_data,
-            new_gvas_data,
-            "sav does not match expected after roundtrip",
-        )
-
-    def test_worldoption_sav(self):
-        with open("tests/testdata/WorldOption.sav", "rb") as f:
-            data = f.read()
-        gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(
-            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
-        )
-        self.assertEqual(
-            gvas_file.header.dump()["save_game_class_name"],
-            "/Script/Pal.PalWorldOptionSaveGame",
-            "save_game_class_name does not match expected",
-        )
-        dump = gvas_file.dump()
-        js = json.dumps(dump, cls=CustomEncoder)
-        new_js = json.loads(js)
-        new_gvas_file = GvasFile.load(new_js)
-        new_gvas_data = new_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES)
-        self.assertEqual(
-            gvas_data,
-            new_gvas_data,
-            "sav does not match expected after roundtrip",
-        )
-
-    def test_player_sav(self):
-        with open("tests/testdata/00000000000000000000000000000001.sav", "rb") as f:
-            data = f.read()
-        gvas_data, _ = decompress_sav_to_gvas(data)
-        gvas_file = GvasFile.read(
-            gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES
-        )
-        self.assertEqual(
-            gvas_file.header.dump()["save_game_class_name"],
-            "/Script/Pal.PalWorldPlayerSaveGame",
-            "save_game_class_name does not match expected",
         )
         dump = gvas_file.dump()
         js = json.dumps(dump, cls=CustomEncoder)
