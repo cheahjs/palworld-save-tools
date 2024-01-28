@@ -38,6 +38,7 @@ class WorldSaveData_Value:
     DungeonPointMarkerSaveData: Optional[None] = None
     DungeonSaveData: Optional[None] = None
     CharacterParameterStorageSaveData: Optional[None] = None
+    BossSpawnerSaveData: Optional[None] = None
 
     def __post_init__(self):
         self.CharacterSaveParameterMap = ICSPMap(**self.CharacterSaveParameterMap)

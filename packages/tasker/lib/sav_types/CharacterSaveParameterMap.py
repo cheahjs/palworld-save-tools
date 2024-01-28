@@ -1,7 +1,14 @@
 from dataclasses import dataclass, fields
 from typing import List, Optional
 
-from lib.sav_types.utilType import Opaque
+"""
+   Parsing Section 😫🤢🥺
+"""
+@dataclass
+class LevelType:
+    id: Optional[None]
+    value: int
+    type: str
 
 @dataclass
 class GotStatusPointListType_Value_Values_StatusPoint:
@@ -50,11 +57,9 @@ class UnusedStatusPointType:
     value: int
     type: str
 
-"""
-   Parsing Section 😫🤢🥺
-"""
 @dataclass
 class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value:
+    Level:Optional[LevelType] = None
     UniqueNPCID: Optional[UnusedStatusPointType] = None
     Rank: Optional[UnusedStatusPointType] = None
     Rank_Defence: Optional[UnusedStatusPointType] = None
@@ -72,7 +77,6 @@ class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value:
     UnusedStatusPoint: Optional[UnusedStatusPointType] = None
     GotStatusPointList: Optional[GotStatusPointListType] = None
     MaxFullStomach: Optional[None] = None
-    Level: Optional[None] = None
     Exp: Optional[None] = None
     NickName: Optional[None]= None
     HP: Optional[None]= None
@@ -113,6 +117,7 @@ class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value:
     def __post_init__(self):
         self.UnusedStatusPoint = UnusedStatusPointType(**self.UnusedStatusPoint) if self.UnusedStatusPoint else self.UnusedStatusPoint
         self.GotStatusPointList = GotStatusPointListType(**self.GotStatusPointList) if self.GotStatusPointList else self.GotStatusPointList
+        self.Level = LevelType(**self.Level) if self.Level else self.Level
     
 @dataclass
 class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter:
@@ -125,9 +130,6 @@ class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter:
         try:
             self.value = ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value(**self.value)
         except Exception as e:
-            print("========================================================")
-            print(self.value)
-            print("========================================================")
             raise e
 
 @dataclass

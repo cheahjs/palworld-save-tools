@@ -23,7 +23,6 @@ rawGroupData = getRawGroupData(saveData)
 rawMapObjectData = getRawMapObjectData(saveData)
 rawBaseCampData = getRawBaseCampSaveData(saveData)
 
-# pprint.pprint(LevelInstance.properties.Timestamp)
 rawPlayers = getRawPlayers(saveData)
 
 playerIds:List[RawChar]  = []
