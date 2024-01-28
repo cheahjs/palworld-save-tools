@@ -1,7 +1,7 @@
-import unittest
-import subprocess
-import os
 import contextlib
+import os
+import subprocess
+import unittest
 
 
 class TestCliScripts(unittest.TestCase):

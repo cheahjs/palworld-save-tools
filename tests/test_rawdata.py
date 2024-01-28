@@ -1,8 +1,8 @@
 import base64
 import json
 import unittest
-from lib.noindent import CustomEncoder
 
+from lib.noindent import CustomEncoder
 from lib.rawdata import *
 
 

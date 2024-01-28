@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+
 from lib.gvas import GvasFile
 from lib.noindent import CustomEncoder
 from lib.palsav import compress_gvas_to_sav, decompress_sav_to_gvas
