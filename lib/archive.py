@@ -448,7 +448,9 @@ class FArchiveWriter:
             self.data.write(b"\x00")
         else:
             str_bytes = string.encode("utf-16-le")
-            self.write_int32(-(len(string) + 1))
+            assert len(str_bytes) == len(string) * 2
+            assert len(str_bytes) % 2 == 0
+            self.write_int32(-((len(str_bytes) // 2) + 1))
             self.data.write(str_bytes)
             self.data.write(b"\x00\x00")
         return self.data.tell() - start
