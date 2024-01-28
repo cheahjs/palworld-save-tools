@@ -1,6 +1,7 @@
 import base64
-from lib.archive import FArchiveReader, FArchiveWriter
 from typing import Any, Callable
+
+from lib.archive import FArchiveReader, FArchiveWriter
 
 
 def custom_version_reader(reader: FArchiveReader):

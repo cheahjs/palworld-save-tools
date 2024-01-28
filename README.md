@@ -28,7 +28,7 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 ### Prerequisites
 
 1. Python 3.9 or newer.
-    - Windows users: You can install [Python 3.12 from the Microsoft Store](https://apps.microsoft.com/detail/9NCVDN91XZQP)
+    - Windows users: You can install [Python 3.12 from the Microsoft Store](https://apps.microsoft.com/detail/9NCVDN91XZQP) or from [python.org](https://www.python.org/)
 
 ### Windows GUI steps
 

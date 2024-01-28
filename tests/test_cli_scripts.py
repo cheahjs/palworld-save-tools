@@ -1,295 +1,93 @@
-import unittest
-import subprocess
-import os
 import contextlib
+import os
+import subprocess
+import unittest
+
+from parameterized import parameterized
 
 
 class TestCliScripts(unittest.TestCase):
-    def test_player_roundtrip(self):
+    @parameterized.expand(
+        [
+            ("Level.sav"),
+            ("Level-tricky-unicode-player-name.sav"),
+            ("LevelMeta.sav"),
+            ("LocalData.sav"),
+            ("WorldOption.sav"),
+        ]
+    )
+    def test_sav_roundtrip(self, file_name):
         try:
+            # Convert sav to JSON
             run = subprocess.run(
                 [
                     "python3",
                     "convert.py",
-                    "tests/testdata/00000000000000000000000000000001.sav",
+                    f"tests/testdata/{file_name}",
                 ]
             )
             self.assertEqual(run.returncode, 0)
-            self.assertTrue(
-                os.path.exists(
-                    "tests/testdata/00000000000000000000000000000001.sav.json"
-                )
-            )
+            self.assertTrue(os.path.exists(f"tests/testdata/{file_name}.json"))
+            # Convert JSON back to sav
             os.rename(
-                "tests/testdata/00000000000000000000000000000001.sav.json",
-                "tests/testdata/00000000000000000000000000000001-2.sav.json",
+                f"tests/testdata/{file_name}.json",
+                f"tests/testdata/1-{file_name}.json",
             )
             run = subprocess.run(
                 [
                     "python3",
                     "convert.py",
-                    "tests/testdata/00000000000000000000000000000001-2.sav.json",
+                    f"tests/testdata/1-{file_name}.json",
                 ]
             )
             self.assertEqual(run.returncode, 0)
-            self.assertTrue(
-                os.path.exists("tests/testdata/00000000000000000000000000000001-2.sav")
-            )
+            self.assertTrue(os.path.exists(f"tests/testdata/1-{file_name}"))
+            # Reconvert sav back to JSON
             os.rename(
-                "tests/testdata/00000000000000000000000000000001-2.sav",
-                "tests/testdata/00000000000000000000000000000001-3.sav",
+                f"tests/testdata/1-{file_name}",
+                f"tests/testdata/2-{file_name}",
             )
             run = subprocess.run(
                 [
                     "python3",
                     "convert.py",
-                    "tests/testdata/00000000000000000000000000000001-3.sav",
+                    f"tests/testdata/2-{file_name}",
                 ]
             )
             self.assertEqual(run.returncode, 0)
-            self.assertTrue(
-                os.path.exists(
-                    "tests/testdata/00000000000000000000000000000001-3.sav.json"
-                )
+            self.assertTrue(os.path.exists(f"tests/testdata/2-{file_name}.json"))
+            # Reconvert JSON back to sav
+            os.rename(
+                f"tests/testdata/2-{file_name}.json",
+                f"tests/testdata/3-{file_name}.json",
             )
+            run = subprocess.run(
+                [
+                    "python3",
+                    "convert.py",
+                    f"tests/testdata/3-{file_name}.json",
+                ]
+            )
+            self.assertEqual(run.returncode, 0)
+            self.assertTrue(os.path.exists(f"tests/testdata/3-{file_name}"))
+            # Compare the final sav to the intermediate save
+            with open(f"tests/testdata/2-{file_name}", "rb") as f:
+                intermediate_data = f.read()
+            with open(f"tests/testdata/3-{file_name}", "rb") as f:
+                final_data = f.read()
+            self.assertEqual(intermediate_data, final_data)
         finally:
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/00000000000000000000000000000001.sav.json")
+                os.remove(f"tests/testdata/{file_name}.json")
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/00000000000000000000000000000001-2.sav.json")
+                os.remove(f"tests/testdata/1-{file_name}")
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/00000000000000000000000000000001-3.sav")
+                os.remove(f"tests/testdata/1-{file_name}.json")
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/00000000000000000000000000000001-3.sav.json")
-
-    def test_level_roundtrip(self):
-        try:
-            run = subprocess.run(["python3", "convert.py", "tests/testdata/Level.sav"])
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/Level.sav.json"))
-            os.rename(
-                "tests/testdata/Level.sav.json", "tests/testdata/Level-2.sav.json"
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/Level-2.sav.json",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/Level-2.sav"))
-            os.rename("tests/testdata/Level-2.sav", "tests/testdata/Level-3.sav")
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/Level-3.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/Level-3.sav.json"))
-        finally:
+                os.remove(f"tests/testdata/2-{file_name}")
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level.sav.json")
+                os.remove(f"tests/testdata/2-{file_name}.json")
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-2.sav.json")
+                os.remove(f"tests/testdata/3-{file_name}")
             with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-3.sav")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-3.sav.json")
-
-    def test_level_tricky_unicode_player_name_roundtrip(self):
-        try:
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/Level-tricky-unicode-player-name.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(
-                os.path.exists(
-                    "tests/testdata/Level-tricky-unicode-player-name.sav.json"
-                )
-            )
-            os.rename(
-                "tests/testdata/Level-tricky-unicode-player-name.sav.json",
-                "tests/testdata/Level-tricky-unicode-player-name-2.sav.json",
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/Level-tricky-unicode-player-name-2.sav.json",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(
-                os.path.exists("tests/testdata/Level-tricky-unicode-player-name-2.sav")
-            )
-            os.rename(
-                "tests/testdata/Level-tricky-unicode-player-name-2.sav",
-                "tests/testdata/Level-tricky-unicode-player-name-3.sav",
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/Level-tricky-unicode-player-name-3.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(
-                os.path.exists(
-                    "tests/testdata/Level-tricky-unicode-player-name-3.sav.json"
-                )
-            )
-        finally:
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-tricky-unicode-player-name.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-tricky-unicode-player-name-2.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-tricky-unicode-player-name-3.sav")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/Level-tricky-unicode-player-name-3.sav.json")
-
-    def test_levelmeta_roundtrip(self):
-        try:
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/LevelMeta.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/LevelMeta.sav.json"))
-            os.rename(
-                "tests/testdata/LevelMeta.sav.json",
-                "tests/testdata/LevelMeta-2.sav.json",
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/LevelMeta-2.sav.json",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/LevelMeta-2.sav"))
-            os.rename(
-                "tests/testdata/LevelMeta-2.sav", "tests/testdata/LevelMeta-3.sav"
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/LevelMeta-3.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/LevelMeta-3.sav.json"))
-        finally:
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LevelMeta.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LevelMeta-2.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LevelMeta-3.sav")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LevelMeta-3.sav.json")
-
-    def test_localdata_roundtrip(self):
-        try:
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/LocalData.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/LocalData.sav.json"))
-            os.rename(
-                "tests/testdata/LocalData.sav.json",
-                "tests/testdata/LocalData-2.sav.json",
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/LocalData-2.sav.json",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/LocalData-2.sav"))
-            os.rename(
-                "tests/testdata/LocalData-2.sav", "tests/testdata/LocalData-3.sav"
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/LocalData-3.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/LocalData-3.sav.json"))
-        finally:
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LocalData.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LocalData-2.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LocalData-3.sav")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/LocalData-3.sav.json")
-
-    def test_worldoption_roundtrip(self):
-        try:
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/WorldOption.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/WorldOption.sav.json"))
-            os.rename(
-                "tests/testdata/WorldOption.sav.json",
-                "tests/testdata/WorldOption-2.sav.json",
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/WorldOption-2.sav.json",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/WorldOption-2.sav"))
-            os.rename(
-                "tests/testdata/WorldOption-2.sav", "tests/testdata/WorldOption-3.sav"
-            )
-            run = subprocess.run(
-                [
-                    "python3",
-                    "convert.py",
-                    "tests/testdata/WorldOption-3.sav",
-                ]
-            )
-            self.assertEqual(run.returncode, 0)
-            self.assertTrue(os.path.exists("tests/testdata/WorldOption-3.sav.json"))
-        finally:
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/WorldOption.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/WorldOption-2.sav.json")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/WorldOption-3.sav")
-            with contextlib.suppress(FileNotFoundError):
-                os.remove("tests/testdata/WorldOption-3.sav.json")
+                os.remove(f"tests/testdata/3-{file_name}.json")

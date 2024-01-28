@@ -1,8 +1,8 @@
 import io
 import os
 import struct
-from typing import Callable, Union
 import uuid
+from typing import Callable, Union
 
 
 def instance_id_reader(reader):
