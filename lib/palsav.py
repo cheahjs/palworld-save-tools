@@ -22,13 +22,15 @@ def decompress_sav_to_gvas(data: bytes) -> tuple[bytes, int]:
         if compressed_len != len(data) - 12:
             raise Exception(f"incorrect compressed length: {compressed_len}")
     # Decompress file
-    uncompressed_data = zlib.decompress(data[12:])
+    decompressor = zlib.decompressobj()
+    uncompressed_data = decompressor.decompress(data[12:])
     if save_type == 0x32:
         # Check if the compressed length is correct
         if compressed_len != len(uncompressed_data):
             raise Exception(f"incorrect compressed length: {compressed_len}")
         # Decompress file
-        uncompressed_data = zlib.decompress(uncompressed_data)
+        decompressor = zlib.decompressobj()
+        uncompressed_data = decompressor.decompress(uncompressed_data)
     # Check if the uncompressed length is correct
     if uncompressed_len != len(uncompressed_data):
         raise Exception(f"incorrect uncompressed length: {uncompressed_len}")
