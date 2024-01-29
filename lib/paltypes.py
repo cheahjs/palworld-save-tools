@@ -47,12 +47,19 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         encode_build_process,
     ),
     ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (
-        decode_debug,
-        encode_debug,
+        decode_connector,
+        encode_connector,
     ),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (),
+    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (
+        decode_map_model,
+        encode_map_model,
+    ),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
+    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
+    #     decode_map_concrete_model,
+    #     encode_map_concrete_model,
+    # ),
     # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (),
     # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.RawData": (),
     # ".worldSaveData.CharacterContainerSaveData.Value.RawData": (),

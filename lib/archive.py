@@ -14,6 +14,8 @@ def instance_id_reader(reader: "FArchiveReader"):
 
 def uuid_reader(reader: "FArchiveReader"):
     b = reader.read(16)
+    if len(b) != 16:
+        raise Exception("could not read 16 bytes for uuid")
     return uuid.UUID(
         bytes=bytes(
             [
