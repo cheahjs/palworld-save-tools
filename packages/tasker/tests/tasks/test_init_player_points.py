@@ -1,2 +1,7 @@
-""" Init (all)Players all skill and status point
-"""
+import unittest
+
+from tasks.init_player_points import initPlayerPoints
+
+class TestTaskInitPlayerPoints(unittest.TestCase):
+    def test(self):
+        pass

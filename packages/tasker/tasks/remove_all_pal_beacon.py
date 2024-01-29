@@ -42,6 +42,9 @@ for guild in guilds:
         if guild.value.RawData:
             baseCampInstanceIdss.append(guild.value.RawData.value.map_object_instance_ids_base_camp_points)
 
+# Move Pal workers to pal container
+# @haveto
+
 # Remove BaseCamps on GroupData::Guild
 ## Delete base_ids
 ## Delete map_object_instance_ids_base_camp_points
@@ -51,7 +54,6 @@ for guild in guilds:
 
 # Remove BaseCampSaveData
 saveData.properties.worldSaveData.value.BaseCampSaveData.value = []
-
 
 # Remove BaseCamp on World
 for baseCampInstanceIds in baseCampInstanceIdss:
