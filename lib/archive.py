@@ -96,6 +96,14 @@ class FArchiveReader:
         if size == 0:
             return ""
 
+        mask = 0xFF
+        if size > mask:
+            # This must be unusual, but this may be different in the future
+            print(
+                "Unusual size %s " % hex(size)
+            )
+            size = size & mask
+
         data: bytes
         encoding: str
         if LoadUCS2Char:
