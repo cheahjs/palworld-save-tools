@@ -15,6 +15,7 @@ This tool currently supports additional parsing of the following data not handle
     - Groups such as in-game organizations and guilds
 1. `Level.sav`:`CharacterSaveParameterMap`
     - Characters such as players and pals
+1. `Level.sav`: `MapObjectSaveData.MapObjectSaveData.Model`
 
 ## Converting co-op saves to dedicated server saves
 
@@ -55,6 +56,6 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 Additional command line arguments:
 
 1. `--to-json`: Force SAV to JSON conversion regardless of file extension
-1. `--from-json`: Force JSON to SAV converrsion regardless of file extension
+1. `--from-json`: Force JSON to SAV conversion regardless of file extension
 1. `--output`: Override the default output path
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
