@@ -55,6 +55,6 @@ Please follow the instructions provided over at https://github.com/xNul/palworld
 Additional command line arguments:
 
 1. `--to-json`: Force SAV to JSON conversion regardless of file extension
-1. `--from-json`: Force JSON to SAV converrsion regardless of file extension
+1. `--from-json`: Force JSON to SAV conversion regardless of file extension
 1. `--output`: Override the default output path
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
