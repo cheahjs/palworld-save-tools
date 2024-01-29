@@ -27,6 +27,11 @@ def main():
         help="Override heuristics and convert JSON file to SAV",
     )
     parser.add_argument(
+        "--fix-save",
+        action="store_true",
+        help="Try to fix save",
+    )
+    parser.add_argument(
         "--output",
         "-o",
         help="Output file (default: <filename>.json or <filename>.sav)",
@@ -45,14 +50,21 @@ def main():
         print(f"{args.filename} is not a file")
         exit(1)
 
-    if args.to_json or args.filename.endswith(".sav"):
+    if args.fix_save and args.filename.endswith(".sav"):
+        if not args.output:
+            output_path = args.filename + ".fixed"
+        else:
+            output_path = args.output
+        try_to_fix_save(args.filename, output_path)
+
+    elif args.to_json or args.filename.endswith(".sav"):
         if not args.output:
             output_path = args.filename + ".json"
         else:
             output_path = args.output
         convert_sav_to_json(args.filename, output_path, args.minify_json)
 
-    if args.from_json or args.filename.endswith(".json"):
+    elif args.from_json or args.filename.endswith(".json"):
         if not args.output:
             output_path = args.filename.replace(".json", "")
         else:
@@ -88,6 +100,34 @@ def convert_json_to_sav(filename, output_path):
     with open(filename, "r", encoding="utf8") as f:
         data = json.load(f)
     gvas_file = GvasFile.load(data)
+    print(f"Compressing SAV file")
+    if (
+        "Pal.PalWorldSaveGame" in gvas_file.header.save_game_class_name
+        or "Pal.PalLocalWorldSaveGame" in gvas_file.header.save_game_class_name
+    ):
+        save_type = 0x32
+    else:
+        save_type = 0x31
+    sav_file = compress_gvas_to_sav(
+        gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type
+    )
+    print(f"Writing SAV file to {output_path}")
+    with open(output_path, "wb") as f:
+        f.write(sav_file)
+
+
+def try_to_fix_save(filename, output_path):
+    print(f"Trying to fix {filename}, saving to {output_path}")
+    if os.path.exists(output_path):
+        print(f"{output_path} already exists, this will overwrite the file")
+        if not confirm_prompt("Are you sure you want to continue?"):
+            exit(1)
+    print(f"Decompressing sav file")
+    with open(filename, "rb") as f:
+        data = f.read()
+        raw_gvas, _ = decompress_sav_to_gvas(data)
+    print(f"Loading GVAS file")
+    gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
     print(f"Compressing SAV file")
     if (
         "Pal.PalWorldSaveGame" in gvas_file.header.save_game_class_name

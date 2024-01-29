@@ -108,9 +108,12 @@ class FArchiveReader:
             return data.decode(encoding)
         except Exception as e:
             try:
+                data0 = data
+                mask = 0x7F
+                data = bytes((byte & mask for byte in data))
                 escaped = data.decode(encoding, errors="surrogatepass")
                 print(
-                    f"Error decoding {encoding} string of length {size}, data loss may occur! {bytes(data)}"
+                    f"Error decoding {encoding} string of length {size}, data loss may occur! {bytes(data0)} -> {bytes(data)}"
                 )
                 return escaped
             except Exception as e:
