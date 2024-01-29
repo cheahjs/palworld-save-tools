@@ -58,27 +58,34 @@ class UnusedStatusPointType:
     type: str
 
 @dataclass
+class NickNameType:
+    id: Optional[None]
+    value: str
+    type: str
+
+@dataclass
 class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value:
     Level:Optional[LevelType] = None
     UniqueNPCID: Optional[UnusedStatusPointType] = None
-    Rank: Optional[UnusedStatusPointType] = None
-    Rank_Defence: Optional[UnusedStatusPointType] = None
-    Rank_HP:Optional[UnusedStatusPointType] = None
-    Rank_CraftSpeed: Optional[UnusedStatusPointType] = None
-    Tiemr_FoodWithStatusEffect: Optional[UnusedStatusPointType] = None
-    FoodWithStatusEffect: Optional[UnusedStatusPointType] = None
-    IsRarePal: Optional[UnusedStatusPointType] = None
-    PalReviveTimer: Optional[UnusedStatusPointType] = None
-    CurrentWorkSuitability: Optional[UnusedStatusPointType] = None
-    Rank_Attack: Optional[UnusedStatusPointType] = None
-    BaseCampWorkerEventProgressTime: Optional[UnusedStatusPointType] = None
-    BaseCampWorkerEventType: Optional[UnusedStatusPointType] = None
-    WorkerSick: Optional[UnusedStatusPointType] = None
     UnusedStatusPoint: Optional[UnusedStatusPointType] = None
     GotStatusPointList: Optional[GotStatusPointListType] = None
+    NickName: Optional[NickNameType]= None
+    ############################################################################
+    Rank: Optional[None] = None
+    Rank_Defence: Optional[None] = None
+    Rank_HP:Optional[None] = None
+    Rank_CraftSpeed: Optional[None] = None
+    Tiemr_FoodWithStatusEffect: Optional[None] = None
+    FoodWithStatusEffect: Optional[None] = None
+    IsRarePal: Optional[None] = None
+    PalReviveTimer: Optional[None] = None
+    CurrentWorkSuitability: Optional[None] = None
+    Rank_Attack: Optional[None] = None
+    BaseCampWorkerEventProgressTime: Optional[None] = None
+    BaseCampWorkerEventType: Optional[None] = None
+    WorkerSick: Optional[None] = None
     MaxFullStomach: Optional[None] = None
     Exp: Optional[None] = None
-    NickName: Optional[None]= None
     HP: Optional[None]= None
     FullStomach: Optional[None]= None
     IsPlayer: Optional[None]= None
@@ -118,6 +125,7 @@ class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter_Value:
         self.UnusedStatusPoint = UnusedStatusPointType(**self.UnusedStatusPoint) if self.UnusedStatusPoint else self.UnusedStatusPoint
         self.GotStatusPointList = GotStatusPointListType(**self.GotStatusPointList) if self.GotStatusPointList else self.GotStatusPointList
         self.Level = LevelType(**self.Level) if self.Level else self.Level
+        self.NickName = NickNameType(**self.NickName) if self.NickName else self.NickName
     
 @dataclass
 class ICSPMap_Value_Value_RawData_Value_Object_SaveParameter:

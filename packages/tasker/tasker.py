@@ -3,6 +3,7 @@ import json
 import os
 
 from tasks.init_player_points import initPlayerPoints
+from tasks.get_player_info import getPlayersInfo
 
 def main():
     parser = argparse.ArgumentParser(
@@ -24,12 +25,16 @@ def main():
     args = parser.parse_args()
     if(args.task_list):
         print("Task List")
+        print("\t- get_player_info ${LevelJsonFile} \n\t\t remove players\n")
         print("\t- init_player_points ${LevelJsonFile}\n\t\t init all players status point.\n")
         print("\t- remove_all_pal_beacon ${LevelJsonFile}\n\t\t remove all players pal beacon.\n")
-        print("\t- remove_player ${removePlayersJsonDirectory} ${LevelJsonFile}\n\t\t remove players\n")
+        # print("\t- remove_player ${removePlayersJsonDirectory} ${LevelJsonFile}\n\t\t remove players\n")
+    if args.taskname == "get_player_info":
+        getPlayersInfo(args.jsonfile)
 
     if args.taskname == "init_player_points":
         initPlayerPoints(args.jsonfile, args.output)
+
     return 0
 
 if __name__ == "__main__":
