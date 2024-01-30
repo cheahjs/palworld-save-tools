@@ -1,4 +1,7 @@
-from lib.rawdata import *
+from typing import Any, Callable
+
+from lib.archive import FArchiveReader, FArchiveWriter
+from lib.rawdata import build_process, character, connector, group, map_model
 
 PALWORLD_TYPE_HINTS: dict[str, str] = {
     ".worldSaveData.CharacterContainerSaveData.Key": "StructProperty",
@@ -37,22 +40,22 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         Callable[[FArchiveWriter, str, dict[str, Any]], int],
     ],
 ] = {
-    ".worldSaveData.GroupSaveDataMap": (decode_group_data, encode_group_data),
+    ".worldSaveData.GroupSaveDataMap": (group.decode, group.encode),
     ".worldSaveData.CharacterSaveParameterMap.Value.RawData": (
-        decode_character_data,
-        encode_character_data,
+        character.decode,
+        character.encode,
     ),
     ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.BuildProcess.RawData": (
-        decode_build_process,
-        encode_build_process,
+        build_process.decode,
+        build_process.encode,
     ),
     ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (
-        decode_connector,
-        encode_connector,
+        connector.decode,
+        connector.encode,
     ),
     ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (
-        decode_map_model,
-        encode_map_model,
+        map_model.decode,
+        map_model.encode,
     ),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
