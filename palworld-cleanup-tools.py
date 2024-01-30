@@ -99,6 +99,10 @@ def main():
         print("  DeletePlayer(uid,dry_run=False)    - Wipe player data from save, dry_run: only show how to delete")
         print("  MigratePlayer(old_uid,new_uid)     - Migrate the player from old PlayerUId to new PlayerUId")
         print("  Save()                             - Save the file and exit")
+        print()
+        print("Advance feature:")
+        print("  search_key(wsd, '<value>')         - Locate the key in the structure")
+        print("  search_values(wsd, '<value>')      - Locate the value in the structure")
         return
 
     if args.fix_missing or args.fix_capture:
