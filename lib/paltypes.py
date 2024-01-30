@@ -2,10 +2,13 @@ from typing import Any, Callable
 
 from lib.archive import FArchiveReader, FArchiveWriter
 from lib.rawdata import (
+    base_camp,
+    base_camp_module,
     build_process,
     character,
     character_container,
     connector,
+    debug,
     dynamic_item,
     foliage_model,
     foliage_model_instance,
@@ -13,6 +16,8 @@ from lib.rawdata import (
     item_container,
     item_container_slots,
     map_model,
+    work_collection,
+    worker_director,
 )
 
 PALWORLD_TYPE_HINTS: dict[str, str] = {
@@ -97,12 +102,21 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         foliage_model_instance.decode,
         foliage_model_instance.encode,
     ),
+    ".worldSaveData.BaseCampSaveData.Value.RawData": (
+        base_camp.decode,
+        base_camp.encode,
+    ),
+    ".worldSaveData.BaseCampSaveData.Value.WorkerDirector.RawData": (
+        worker_director.decode,
+        worker_director.encode,
+    ),
+    ".worldSaveData.BaseCampSaveData.Value.WorkCollection.RawData": (
+        work_collection.decode,
+        work_collection.encode,
+    ),
+    # ".worldSaveData.BaseCampSaveData.Value.ModuleMap": (base_camp_module.decode, base_camp_module.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.RawData": (debug.decode, debug.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value.RawData": (debug.decode, debug.encode),
-    # ".worldSaveData.BaseCampSaveData.Value.WorkerDirector.RawData": (debug.decode, debug.encode),
-    # ".worldSaveData.BaseCampSaveData.Value.WorkCollection.RawData": (debug.decode, debug.encode),
-    # ".worldSaveData.BaseCampSaveData.Value.ModuleMap.Value.RawData": (debug.decode, debug.encode),
-    # ".worldSaveData.BaseCampSaveData.Value.RawData": (debug.decode, debug.encode),
     # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
     #     decode_map_concrete_model,

@@ -429,6 +429,26 @@ class FArchiveReader:
                 z = self.float()
                 return (x, y, z)
 
+    def ftransform(self) -> dict[str, dict[str, float]]:
+        return {
+            "rotation": {
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+                "w": self.double(),
+            },
+            "translation": {
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+            },
+            "scale3d": {
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+            },
+        }
+
 
 def uuid_writer(writer, s: Union[str, uuid.UUID]):
     if isinstance(s, str):
@@ -812,3 +832,15 @@ class FArchiveWriter:
             self.double(x)
             self.double(y)
             self.double(z)
+
+    def ftransform(self, value: dict[str, dict[str, float]]):
+        self.double(value["rotation"]["x"])
+        self.double(value["rotation"]["y"])
+        self.double(value["rotation"]["z"])
+        self.double(value["rotation"]["w"])
+        self.double(value["translation"]["x"])
+        self.double(value["translation"]["y"])
+        self.double(value["translation"]["z"])
+        self.double(value["scale3d"]["x"])
+        self.double(value["scale3d"]["y"])
+        self.double(value["scale3d"]["z"])

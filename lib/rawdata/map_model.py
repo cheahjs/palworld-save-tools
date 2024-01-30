@@ -25,24 +25,7 @@ def decode_bytes(m_bytes: Sequence[int]) -> dict[str, Any]:
         "current": reader.i32(),
         "max": reader.i32(),
     }
-    data["initital_transform_cache"] = {
-        "rotation": {
-            "x": reader.double(),
-            "y": reader.double(),
-            "z": reader.double(),
-            "w": reader.double(),
-        },
-        "translation": {
-            "x": reader.double(),
-            "y": reader.double(),
-            "z": reader.double(),
-        },
-        "scale3d": {
-            "x": reader.double(),
-            "y": reader.double(),
-            "z": reader.double(),
-        },
-    }
+    data["initital_transform_cache"] = reader.ftransform()
     data["repair_work_id"] = reader.guid()
     data["owner_spawner_level_object_instance_id"] = reader.guid()
     data["owner_instance_id"] = reader.guid()
@@ -80,18 +63,7 @@ def encode_bytes(p: dict[str, Any]) -> bytes:
     writer.i32(p["hp"]["current"])
     writer.i32(p["hp"]["max"])
 
-    writer.double(p["initital_transform_cache"]["rotation"]["x"])
-    writer.double(p["initital_transform_cache"]["rotation"]["y"])
-    writer.double(p["initital_transform_cache"]["rotation"]["z"])
-    writer.double(p["initital_transform_cache"]["rotation"]["w"])
-
-    writer.double(p["initital_transform_cache"]["translation"]["x"])
-    writer.double(p["initital_transform_cache"]["translation"]["y"])
-    writer.double(p["initital_transform_cache"]["translation"]["z"])
-
-    writer.double(p["initital_transform_cache"]["scale3d"]["x"])
-    writer.double(p["initital_transform_cache"]["scale3d"]["y"])
-    writer.double(p["initital_transform_cache"]["scale3d"]["z"])
+    writer.ftransform(p["initital_transform_cache"])
 
     writer.guid(p["repair_work_id"])
     writer.guid(p["owner_spawner_level_object_instance_id"])
