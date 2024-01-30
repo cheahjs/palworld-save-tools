@@ -59,3 +59,13 @@ Additional command line arguments:
 1. `--from-json`: Force JSON to SAV conversion regardless of file extension
 1. `--output`: Override the default output path
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
+
+
+### Cleanup Tools
+
+This tools is for cleanup the unreference item, rename the player name, and delete the player.
+
+For cleaning the character and the guild, use the follow command `python palworld-cleanup-tools.py --fix-missing --fix-capture Level.sav`
+
+For modifiy the `Level.sav` file, use the follow command
+`python -i palworld-cleanup-tools.py Level.sav`
