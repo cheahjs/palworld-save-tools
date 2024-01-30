@@ -1,4 +1,5 @@
 import io
+import math
 import os
 import struct
 import uuid
@@ -381,6 +382,73 @@ class FArchiveReader:
                 raise Exception(f"Unknown array type: {array_type} ({path})")
         return values
 
+    def compressed_short_rotator(self) -> tuple[float, float, float]:
+        short_pitch = self.u16() if self.bool() else 0
+        short_yaw = self.u16() if self.bool() else 0
+        short_roll = self.u16() if self.bool() else 0
+        pitch = short_pitch * (360.0 / 65536.0)
+        yaw = short_yaw * (360.0 / 65536.0)
+        roll = short_roll * (360.0 / 65536.0)
+        return [pitch, yaw, roll]
+
+    def serializeint(self, component_bit_count: int) -> int:
+        b = bytearray(self.read((component_bit_count + 7) // 8))
+        if (component_bit_count % 8) != 0:
+            b[-1] &= (1 << (component_bit_count % 8)) - 1
+        value = int.from_bytes(b, "little")
+        return value
+
+    def packed_vector(self, scale_factor: int) -> tuple[float, float, float]:
+        component_bit_count_and_extra_info = self.u32()
+        component_bit_count = component_bit_count_and_extra_info & 63
+        extra_info = component_bit_count_and_extra_info >> 6
+        if component_bit_count > 0:
+            x = self.serializeint(component_bit_count)
+            y = self.serializeint(component_bit_count)
+            z = self.serializeint(component_bit_count)
+            sign_bit = 1 << (component_bit_count - 1)
+            x = (x & (sign_bit - 1)) - (x & sign_bit)
+            y = (y & (sign_bit - 1)) - (y & sign_bit)
+            z = (z & (sign_bit - 1)) - (z & sign_bit)
+
+            if extra_info:
+                x /= scale_factor
+                y /= scale_factor
+                z /= scale_factor
+            return (x, y, z)
+        else:
+            received_scaler_type_size = 8 if extra_info else 4
+            if received_scaler_type_size == 8:
+                x = self.double()
+                y = self.double()
+                z = self.double()
+                return (x, y, z)
+            else:
+                x = self.float()
+                y = self.float()
+                z = self.float()
+                return (x, y, z)
+
+    def ftransform(self) -> dict[str, dict[str, float]]:
+        return {
+            "rotation": {
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+                "w": self.double(),
+            },
+            "translation": {
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+            },
+            "scale3d": {
+                "x": self.double(),
+                "y": self.double(),
+                "z": self.double(),
+            },
+        }
+
 
 def uuid_writer(writer, s: Union[str, uuid.UUID]):
     if isinstance(s, str):
@@ -687,3 +755,92 @@ class FArchiveWriter:
                 self.byte(values[i])
             else:
                 raise Exception(f"Unknown array type: {array_type}")
+
+    def compressed_short_rotator(self, pitch: float, yaw: float, roll: float):
+        short_pitch = round(pitch * (65536.0 / 360.0)) & 0xFFFF
+        short_yaw = round(yaw * (65536.0 / 360.0)) & 0xFFFF
+        short_roll = round(roll * (65536.0 / 360.0)) & 0xFFFF
+        if short_pitch != 0:
+            self.bool(True)
+            self.u16(short_pitch)
+        else:
+            self.bool(False)
+        if short_yaw != 0:
+            self.bool(True)
+            self.u16(short_yaw)
+        else:
+            self.bool(False)
+        if short_roll != 0:
+            self.bool(True)
+            self.u16(short_roll)
+        else:
+            self.bool(False)
+
+    @staticmethod
+    def unreal_round_float_to_int(value: float) -> int:
+        return int(value)
+
+    @staticmethod
+    def unreal_get_bits_needed(value: int) -> int:
+        massaged_value = value ^ (value >> 63)
+        return 65 - FArchiveWriter.count_leading_zeroes(massaged_value)
+
+    @staticmethod
+    def count_leading_zeroes(value: int) -> int:
+        return 67 - len(bin(-value)) & ~value >> 64
+
+    def serializeint(self, component_bit_count: int, value: int):
+        self.write(
+            int.to_bytes(value, (component_bit_count + 7) // 8, "little", signed=True)
+        )
+
+    def packed_vector(self, scale_factor: int, x: float, y: float, z: float):
+        max_exponent_for_scaling = 52
+        max_value_to_scale = 1 << max_exponent_for_scaling
+        max_exponent_after_scaling = 62
+        max_scaled_value = 1 << max_exponent_after_scaling
+        scaled_x = x * scale_factor
+        scaled_y = y * scale_factor
+        scaled_z = z * scale_factor
+        if max(abs(scaled_x), abs(scaled_y), abs(scaled_z)) < max_scaled_value:
+            use_scaled_value = min(abs(x), abs(y), abs(z)) < max_value_to_scale
+            if use_scaled_value:
+                x = self.unreal_round_float_to_int(scaled_x)
+                y = self.unreal_round_float_to_int(scaled_y)
+                z = self.unreal_round_float_to_int(scaled_z)
+            else:
+                x = self.unreal_round_float_to_int(x)
+                y = self.unreal_round_float_to_int(y)
+                z = self.unreal_round_float_to_int(z)
+
+            component_bit_count = max(
+                self.unreal_get_bits_needed(x),
+                self.unreal_get_bits_needed(y),
+                self.unreal_get_bits_needed(z),
+            )
+            component_bit_count_and_scale_info = (
+                1 << 6 if use_scaled_value else 0
+            ) | component_bit_count
+            self.u32(component_bit_count_and_scale_info)
+            self.serializeint(component_bit_count, x)
+            self.serializeint(component_bit_count, y)
+            self.serializeint(component_bit_count, z)
+        else:
+            component_bit_count = 0
+            component_bit_count_and_scale_info = (1 << 6) | component_bit_count
+            self.u32(component_bit_count_and_scale_info)
+            self.double(x)
+            self.double(y)
+            self.double(z)
+
+    def ftransform(self, value: dict[str, dict[str, float]]):
+        self.double(value["rotation"]["x"])
+        self.double(value["rotation"]["y"])
+        self.double(value["rotation"]["z"])
+        self.double(value["rotation"]["w"])
+        self.double(value["translation"]["x"])
+        self.double(value["translation"]["y"])
+        self.double(value["translation"]["z"])
+        self.double(value["scale3d"]["x"])
+        self.double(value["scale3d"]["y"])
+        self.double(value["scale3d"]["z"])
