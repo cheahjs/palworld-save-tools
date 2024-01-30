@@ -1,7 +1,18 @@
 from typing import Any, Callable
 
 from lib.archive import FArchiveReader, FArchiveWriter
-from lib.rawdata import build_process, character, connector, group, map_model
+from lib.rawdata import (
+    build_process,
+    character,
+    character_container,
+    connector,
+    dynamic_item,
+    foliage_model,
+    group,
+    item_container,
+    item_container_slots,
+    map_model,
+)
 
 PALWORLD_TYPE_HINTS: dict[str, str] = {
     ".worldSaveData.CharacterContainerSaveData.Key": "StructProperty",
@@ -57,17 +68,36 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         map_model.decode,
         map_model.encode,
     ),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
+    ".worldSaveData.ItemContainerSaveData.Value.RawData": (
+        item_container.decode,
+        item_container.encode,
+    ),
+    ".worldSaveData.ItemContainerSaveData.Value.Slots.Slots.RawData": (
+        item_container_slots.decode,
+        item_container_slots.encode,
+    ),
+    # This isn't actually serialised into at all?
+    # ".worldSaveData.CharacterContainerSaveData.Value.RawData": (debug.decode, debug.encode),
+    # This duplicates the data already serialised into the Slots UObject?
+    ".worldSaveData.CharacterContainerSaveData.Value.Slots.Slots.RawData": (
+        character_container.decode,
+        character_container.encode,
+    ),
+    # DynamicItemSaveData is problematic because serialisation is dependent on type, which is not immediately obvious
+    ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData": (
+        dynamic_item.decode,
+        dynamic_item.encode,
+    ),
+    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.RawData": (
+        foliage_model.decode,
+        foliage_model.encode,
+    ),
+    # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (),
+    # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
     #     decode_map_concrete_model,
     #     encode_map_concrete_model,
     # ),
-    # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (),
-    # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.RawData": (),
-    # ".worldSaveData.CharacterContainerSaveData.Value.RawData": (),
-    # ".worldSaveData.CharacterContainerSaveData.Value.Slots.Slots.RawData": (),
-    # ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData": (),
-    # ".worldSaveData.ItemContainerSaveData.Value.RawData": (),
-    # ".worldSaveData.ItemContainerSaveData.Value.Slots.Slots.RawData": (),
+    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
+    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
 }

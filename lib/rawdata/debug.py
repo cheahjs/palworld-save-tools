@@ -11,8 +11,10 @@ def decode(
     value = reader.property(type_name, size, path, allow_custom=False)
     debug_bytes = value["value"]["values"]
     if len(debug_bytes) > 0:
-        print("".join(f"{b:02x}" for b in debug_bytes))
-        # print(bytes(debug_bytes))
+        debug_str = "".join(f"{b:02x}" for b in debug_bytes)
+        # if debug_str != "00000000000000000000000000000000":
+        print(debug_str)
+        print(bytes(debug_bytes))
     return value
 
 
