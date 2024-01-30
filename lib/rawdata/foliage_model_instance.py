@@ -18,7 +18,22 @@ def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes))
     data = {}
     data["model_instance_id"] = reader.guid()
-    data["world_transform"] = {"rotator"}
+    pitch, yaw, roll = reader.compressed_short_rotator()
+    x, y, z = reader.packed_vector(1)
+    data["world_transform"] = {
+        "rotator": {
+            "pitch": pitch,
+            "yaw": yaw,
+            "roll": roll,
+        },
+        "location": {
+            "x": x,
+            "y": y,
+            "z": z,
+        },
+        "scale_x": reader.float(),
+    }
+    data["hp"] = reader.i32()
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
@@ -38,11 +53,20 @@ def encode(
 def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
 
-    writer.fstring(p["model_id"])
-    writer.byte(p["foliage_preset_type"])
-    writer.i64(p["cell_coord"]["x"])
-    writer.i64(p["cell_coord"]["y"])
-    writer.i64(p["cell_coord"]["z"])
+    writer.guid(p["model_instance_id"])
+    writer.compressed_short_rotator(
+        p["world_transform"]["rotator"]["pitch"],
+        p["world_transform"]["rotator"]["yaw"],
+        p["world_transform"]["rotator"]["roll"],
+    )
+    writer.packed_vector(
+        1,
+        p["world_transform"]["location"]["x"],
+        p["world_transform"]["location"]["y"],
+        p["world_transform"]["location"]["z"],
+    )
+    writer.float(p["world_transform"]["scale_x"])
+    writer.i32(p["hp"])
 
     encoded_bytes = writer.bytes()
     return encoded_bytes

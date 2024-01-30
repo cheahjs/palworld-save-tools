@@ -8,6 +8,7 @@ from lib.rawdata import (
     connector,
     dynamic_item,
     foliage_model,
+    foliage_model_instance,
     group,
     item_container,
     item_container_slots,
@@ -92,7 +93,10 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         foliage_model.decode,
         foliage_model.encode,
     ),
-    # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (),
+    # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (
+    #     foliage_model_instance.decode,
+    #     foliage_model_instance.encode,
+    # ),
     # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
     #     decode_map_concrete_model,
