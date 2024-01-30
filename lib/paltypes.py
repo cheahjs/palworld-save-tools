@@ -93,10 +93,16 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         foliage_model.decode,
         foliage_model.encode,
     ),
-    # ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (
-    #     foliage_model_instance.decode,
-    #     foliage_model_instance.encode,
-    # ),
+    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData": (
+        foliage_model_instance.decode,
+        foliage_model_instance.encode,
+    ),
+    # ".worldSaveData.WorkSaveData.WorkSaveData.RawData": (debug.decode, debug.encode),
+    # ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value.RawData": (debug.decode, debug.encode),
+    # ".worldSaveData.BaseCampSaveData.Value.WorkerDirector.RawData": (debug.decode, debug.encode),
+    # ".worldSaveData.BaseCampSaveData.Value.WorkCollection.RawData": (debug.decode, debug.encode),
+    # ".worldSaveData.BaseCampSaveData.Value.ModuleMap.Value.RawData": (debug.decode, debug.encode),
+    # ".worldSaveData.BaseCampSaveData.Value.RawData": (debug.decode, debug.encode),
     # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
     #     decode_map_concrete_model,

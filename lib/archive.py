@@ -392,13 +392,10 @@ class FArchiveReader:
         return [pitch, yaw, roll]
 
     def serializeint(self, component_bit_count: int) -> int:
-        b = self.read((component_bit_count + 7) // 8)
-        value = 0
-        for i in range(len(b) - 1):
-            value |= b[i] << (i * 8)
-        if component_bit_count % 8 != 0:
-            mask = (1 << (component_bit_count % 7)) - 1
-            value |= (b[-1] & mask) << ((len(b) - 1) * 8)
+        b = bytearray(self.read((component_bit_count + 7) // 8))
+        if (component_bit_count % 8) != 0:
+            b[-1] &= (1 << (component_bit_count % 8)) - 1
+        value = int.from_bytes(b, "little")
         return value
 
     def packed_vector(self, scale_factor: int) -> tuple[float, float, float]:
@@ -761,13 +758,6 @@ class FArchiveWriter:
 
     @staticmethod
     def unreal_round_float_to_int(value: float) -> int:
-        # if value == 0:
-        #     sign = 0
-        # elif value > 0:
-        #     sign = 1
-        # else:
-        #     sign = -1
-        # return math.floor(value + (sign * 0.5))
         return int(value)
 
     @staticmethod
@@ -793,9 +783,7 @@ class FArchiveWriter:
         scaled_y = y * scale_factor
         scaled_z = z * scale_factor
         if max(abs(scaled_x), abs(scaled_y), abs(scaled_z)) < max_scaled_value:
-            use_scaled_value = (
-                min(abs(scaled_x), abs(scaled_y), abs(scaled_z)) < max_value_to_scale
-            )
+            use_scaled_value = min(abs(x), abs(y), abs(z)) < max_value_to_scale
             if use_scaled_value:
                 x = self.unreal_round_float_to_int(scaled_x)
                 y = self.unreal_round_float_to_int(scaled_y)

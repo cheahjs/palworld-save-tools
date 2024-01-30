@@ -14,7 +14,7 @@ def decode(
         debug_str = "".join(f"{b:02x}" for b in debug_bytes)
         # if debug_str != "00000000000000000000000000000000":
         print(debug_str)
-        print(bytes(debug_bytes))
+        # print(bytes(debug_bytes))
     return value
 
 
