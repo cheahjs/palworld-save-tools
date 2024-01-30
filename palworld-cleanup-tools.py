@@ -22,7 +22,7 @@ playerMapping = None
 instanceMapping = None
 output_path = None
 args = None
-
+player = None
 
 def main():
     global wsd, output_file, gvas_file, playerMapping, instanceMapping, output_path, args
@@ -97,6 +97,7 @@ def main():
         print("  ShowGuild(fix_capture=False)       - List the Guild and members")
         print("  RenamePlayer(uid,new_name)         - Rename player to new_name")
         print("  DeletePlayer(uid,dry_run=False)    - Wipe player data from save, dry_run: only show how to delete")
+        print("  EditPlayer(uid)                    - Allocate player base meta data to variable 'player'")
         print("  MigratePlayer(old_uid,new_uid)     - Migrate the player from old PlayerUId to new PlayerUId")
         print("  Save()                             - Save the file and exit")
         print()
@@ -108,6 +109,14 @@ def main():
     if args.fix_missing or args.fix_capture:
         Save()
 
+
+def EditPlayer(player_uid):
+    global player
+    for item in wsd['CharacterSaveParameterMap']['value']:
+        if item['key']['PlayerUId']['value'] == uuid.UUID(player_uid):
+            player = item['value']['RawData']['value']['object']['SaveParameter']['value']
+            print("Player has allocated to 'player' variable, you can use player['Property']['value'] = xxx to modify")
+            pp.pprint(player)
 
 def RenamePlayer(player_uid, new_name):
     for item in wsd['CharacterSaveParameterMap']['value']:
