@@ -104,6 +104,7 @@ def main():
         print("Advance feature:")
         print("  search_key(wsd, '<value>')         - Locate the key in the structure")
         print("  search_values(wsd, '<value>')      - Locate the value in the structure")
+        print("  PrettyPrint(value)                 - Use XML format to show the value")
         return
 
     if args.fix_missing or args.fix_capture:
@@ -426,6 +427,59 @@ def ShowGuild(fix_capture=False):
         #         if ind_char['instance_id'] not in instanceMapping:
         #             print("    \033[31mInvalid Character %s\033[0m" % (str(ind_char['instance_id'])))
 
+
+def PrettyPrint(data, level = 0):
+    simpleType = ['DateTime', 'Guid', 'LinearColor', 'Quat', 'Vector', 'PalContainerId']
+    if 'struct_type' in data:
+        if data['struct_type'] == 'DateTime':
+            print("%s<Value Type='DateTime'>%d</Value>" % ("  " * level, data['value']['DateTime']))
+        elif data['struct_type'] == 'Guid':
+            print("\033[96m%s\033[0m" % (data['value']), end="")
+        elif data['struct_type'] == "LinearColor":
+            print("%.f %.f %.f %.f" % (data['value']['r'],
+                                                                           data['value']['g'],
+                                                                           data['value']['b'],
+                                                                           data['value']['a']), end="")
+        elif data['struct_type'] == "Quat":
+            print("%.f %.f %.f %.f" % (data['value']['x'],
+                                                                           data['value']['y'],
+                                                                           data['value']['z'],
+                                                                           data['value']['w']), end="")
+        elif data['struct_type'] == "Vector":
+            print("%.f %.f %.f" % (data['value']['x'],
+                                                                           data['value']['y'],
+                                                                           data['value']['z']), end="")
+        elif data['struct_type'] == "PalContainerId":
+            print("\033[96m%s\033[0m" % (data['value']['ID']['value']), end="")
+        elif isinstance(data['struct_type'], dict):
+            print("%s<S %s>" % ("  " * level, data['struct_type']))
+            for key in data['value']:
+                PrettyPrint(data['value'], level + 1)
+            print("%s</S %s>" % ("  " * level, data['struct_type']))
+        else:
+            PrettyPrint(data['value'], level + 1)
+    else:
+        for key in data:
+            if not isinstance(data[key], dict):
+                print("%s<%s type='unknow'>%s</%s>" % ("  " * level, key, data[key], key))
+                continue
+            if 'struct_type' in data[key] and data[key]['struct_type'] in simpleType:
+                print("%s<%s s type='%s'>" % ("  " * level, key, data[key]['struct_type']), end="")
+                PrettyPrint(data[key], level + 1)
+                print("</%s>" % (key))
+            elif 'type' in data[key] and data[key]['type'] in ["IntProperty", "Int64Property", "BoolProperty"]:
+                print("%s<%s Type='%s'>\033[95m%d\033[0m</%s>" % ("  " * level, key, data[key]['type'], data[key]['value'], key))
+            elif 'type' in data[key] and data[key]['type'] == "FloatProperty":
+                print("%s<%s Type='%s'>\033[95m%f\033[0m</%s>" % ("  " * level, key, data[key]['type'], data[key]['value'], key))
+            elif 'type' in data[key] and data[key]['type'] in ["StrProperty", "ArrayProperty"]:
+                print("%s<%s Type='%s'>\033[95m%s\033[0m</%s>" % ("  " * level, key, data[key]['type'], data[key]['value'], key))
+            elif isinstance(data[key], list):
+                print("%s<%s Type='%s'>%s</%s>" % ("  " * level, key, data[key]['struct_type'] if 'struct_type' in data[
+                    key] else "\033[31munknow struct\033[0m", str(data[key]), key))
+            else:
+                print("%s<%s Type='%s'>" % ("  " * level, key, data[key]['struct_type'] if 'struct_type' in data[key] else "\033[31munknow struct\033[0m"))
+                PrettyPrint(data[key], level + 1)
+                print("%s</%s>" % ("  " * level, key))
 
 def Save():
     print("processing GVAS to Sav file...", end="", flush=True)
