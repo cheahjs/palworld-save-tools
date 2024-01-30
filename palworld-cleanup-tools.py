@@ -438,7 +438,7 @@ def PrettyPrint(data, level = 0):
     simpleType = ['DateTime', 'Guid', 'LinearColor', 'Quat', 'Vector', 'PalContainerId']
     if 'struct_type' in data:
         if data['struct_type'] == 'DateTime':
-            print("%s<Value Type='DateTime'>%d</Value>" % ("  " * level, data['value']['DateTime']))
+            print("%s<Value Type='DateTime'>%d</Value>" % ("  " * level, data['value']))
         elif data['struct_type'] == 'Guid':
             print("\033[96m%s\033[0m" % (data['value']), end="")
         elif data['struct_type'] == "LinearColor":
@@ -470,7 +470,7 @@ def PrettyPrint(data, level = 0):
                 print("%s<%s type='unknow'>%s</%s>" % ("  " * level, key, data[key], key))
                 continue
             if 'struct_type' in data[key] and data[key]['struct_type'] in simpleType:
-                print("%s<%s s type='%s'>" % ("  " * level, key, data[key]['struct_type']), end="")
+                print("%s<%s type='%s'>" % ("  " * level, key, data[key]['struct_type']), end="")
                 PrettyPrint(data[key], level + 1)
                 print("</%s>" % (key))
             elif 'type' in data[key] and data[key]['type'] in ["IntProperty", "Int64Property", "BoolProperty"]:
