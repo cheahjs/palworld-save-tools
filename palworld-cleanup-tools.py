@@ -372,7 +372,7 @@ def ShowPlayers():
                     playerMeta[player_k] = playerParams[player_k]['value']
 
 
-def FixMissing():
+def FixMissing(dry_run=False):
     # Remove Unused in CharacterSaveParameterMap
     removeItems = []
     for item in wsd['CharacterSaveParameterMap']['value']:
@@ -383,9 +383,11 @@ def FixMissing():
                     "\033[31mInvalid item on CharacterSaveParameterMap\033[0m  UUID: %s  Owner: %s  CharacterID: %s" % (
                         str(item['key']['InstanceId']['value']), str(player['OwnerPlayerUId']['value']),
                         player['CharacterID']['value']))
+                removeItems.append(item)
 
-    for item in removeItems:
-        wsd['CharacterSaveParameterMap']['value'].remove(item)
+    if not dry_run:
+        for item in removeItems:
+            wsd['CharacterSaveParameterMap']['value'].remove(item)
 
 
 def ShowGuild(fix_capture=False):
