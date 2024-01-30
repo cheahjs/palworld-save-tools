@@ -318,7 +318,7 @@ def search_values(dicts, key, level=""):
         if key in dicts.values():
             print("Found value at %s['%s']" % (level, list(dicts.keys())[list(dicts.values()).index(key)]))
             isFound = True
-        elif uuid_match in dicts.values():
+        elif uuid_match is not None and uuid_match in dicts.values():
             print("Found UUID  at %s['%s']" % (level, list(dicts.keys())[list(dicts.values()).index(uuid_match)]))
             isFound = True
         for k in dicts:
@@ -328,7 +328,7 @@ def search_values(dicts, key, level=""):
         if key in dicts:
             print("Found value at %s[%d]" % (level, dicts.index(key)))
             isFound = True
-        elif uuid_match in dicts:
+        elif uuid_match is not None and uuid_match in dicts:
             print("Found UUID  at %s[%d]" % (level, dicts.index(uuid_match)))
             isFound = True
         for idx, l in enumerate(dicts):
