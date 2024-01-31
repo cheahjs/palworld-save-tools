@@ -16,6 +16,18 @@ This tool currently supports additional parsing of the following data not handle
 1. `Level.sav`:`CharacterSaveParameterMap`
     - Characters such as players and pals
 1. `Level.sav`: `MapObjectSaveData.MapObjectSaveData.Model`
+1. `Level.sav`: `ItemContainerSaveData`
+1. `Level.sav`: `CharacterContainerSaveData`
+1. `Level.sav`: `DynamicItemSaveData`
+1. `Level.sav`: `FoliageGridSaveDataMap`
+1. `Level.sav`: `BaseCampSaveData`
+
+Some fields that are not currently parsed:
+
+1. `Level.sav`: `BaseCampSaveData.Value.ModuleMap`
+1. `Level.sav`: `WorkSaveData.WorkSaveData`
+1. `Level.sav`: `WorkSaveData.WorkSaveData.WorkAssignMap`
+1. `Level.sav`: `MapObjectSaveData.MapObjectSaveData.ConcreteModel`
 
 ## Converting co-op saves to dedicated server saves
 

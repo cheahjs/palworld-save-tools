@@ -6,6 +6,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+        exclude: ".*\\.sav$"
       - id: check-ast
       - id: check-case-conflict
       - id: check-json
@@ -19,3 +20,4 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+        args: ["--profile", "black"]

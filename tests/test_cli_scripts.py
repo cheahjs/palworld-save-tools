@@ -20,6 +20,9 @@ class TestCliScripts(unittest.TestCase):
             ("unicode-saves/LocalData.sav"),
             ("unicode-saves/WorldOption.sav"),
             ("unicode-saves/00000000000000000000000000000001.sav"),
+            ("larger-saves/Level.sav"),
+            ("larger-saves/LocalData.sav"),
+            ("larger-saves/00000000000000000000000000000001.sav"),
         ]
     )
     def test_sav_roundtrip(self, file_name):
