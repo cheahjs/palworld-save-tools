@@ -16,6 +16,31 @@ class UUID:
         self.raw_bytes = raw_bytes
         self.parsed_uuid = None
 
+    def from_str(s: str) -> "UUID":
+        b = uuid.UUID(s).bytes
+        return UUID(
+            bytes(
+                [
+                    b[0x3],
+                    b[0x2],
+                    b[0x1],
+                    b[0x0],
+                    b[0x7],
+                    b[0x6],
+                    b[0x5],
+                    b[0x4],
+                    b[0xB],
+                    b[0xA],
+                    b[0x9],
+                    b[0x8],
+                    b[0xF],
+                    b[0xE],
+                    b[0xD],
+                    b[0xC],
+                ]
+            )
+        )
+
     def __str__(self) -> str:
         if not self.parsed_uuid:
             b = self.raw_bytes
@@ -39,6 +64,9 @@ class UUID:
             )
             self.parsed_uuid = uuid.UUID(int=uuid_int)
         return str(self.parsed_uuid)
+
+    def __eq__(self, __value: object) -> bool:
+        return str(self) == str(__value)
 
 
 def instance_id_reader(reader: "FArchiveReader") -> dict[str, UUID]:
