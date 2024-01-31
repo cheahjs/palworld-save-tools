@@ -375,20 +375,24 @@ class FArchiveReader:
 
     def array_value(self, array_type: str, count: int, size: int, path: str):
         values = []
-        for _ in range(count):
-            if array_type == "EnumProperty":
-                values.append(self.fstring())
-            elif array_type == "NameProperty":
-                values.append(self.fstring())
-            elif array_type == "Guid":
-                values.append(self.guid())
-            elif array_type == "ByteProperty":
-                if size == count:
-                    values.append(self.byte())
-                else:
-                    raise Exception("Labelled ByteProperty not implemented")
+        decode_func: Callable
+        if array_type == "EnumProperty":
+            decode_func = self.fstring
+        elif array_type == "NameProperty":
+            decode_func = self.fstring
+        elif array_type == "Guid":
+            decode_func = self.guid
+        elif array_type == "ByteProperty":
+            if size == count:
+                # Special case this and read faster in one go
+                return [b for b in self.read(size)]
             else:
-                raise Exception(f"Unknown array type: {array_type} ({path})")
+                raise Exception("Labelled ByteProperty not implemented")
+        else:
+            raise Exception(f"Unknown array type: {array_type} ({path})")
+        for _ in range(count):
+            values.append(decode_func())
+
         return values
 
     def compressed_short_rotator(self) -> tuple[float, float, float]:
