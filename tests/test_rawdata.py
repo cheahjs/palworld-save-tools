@@ -4,7 +4,7 @@ import unittest
 
 from parameterized import parameterized
 
-from lib.noindent import CustomEncoder
+from lib.json_tools import CustomEncoder
 from lib.rawdata import character, foliage_model_instance, group
 
 

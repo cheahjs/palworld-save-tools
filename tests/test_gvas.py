@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 from lib.archive import FArchiveReader, FArchiveWriter
 from lib.gvas import GvasFile, GvasHeader
-from lib.noindent import CustomEncoder
+from lib.json_tools import CustomEncoder
 from lib.palsav import decompress_sav_to_gvas
 from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 

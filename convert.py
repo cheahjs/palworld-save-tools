@@ -5,7 +5,7 @@ import json
 import os
 
 from lib.gvas import GvasFile
-from lib.noindent import CustomEncoder
+from lib.json_tools import CustomEncoder
 from lib.palsav import compress_gvas_to_sav, decompress_sav_to_gvas
 from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 
