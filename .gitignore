@@ -6,3 +6,4 @@ localtest
 /rust
 /legacy
 __pycache__
+*.prof
