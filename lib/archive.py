@@ -188,10 +188,14 @@ class FArchiveReader:
         self.data.read(size)
 
     def guid(self) -> UUID:
-        return uuid_reader(self)
+        # in the hot loop, avoid function calls
+        return UUID(self.data.read(16))
 
     def optional_guid(self) -> Optional[UUID]:
-        return uuid_reader(self) if self.bool() else None
+        # in the hot loop, avoid function calls
+        if self.data.read(1)[0]:
+            return UUID(self.data.read(16))
+        return None
 
     def tarray(
         self, type_reader: Callable[["FArchiveReader"], dict[str, Any]]
