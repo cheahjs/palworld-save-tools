@@ -102,26 +102,23 @@ class FArchiveReader:
         return self.byte() > 0
 
     def fstring(self) -> str:
-        size = self.i32()
-        LoadUCS2Char: bool = size < 0
-
-        if LoadUCS2Char:
-            if size == -2147483648:
-                raise Exception("Archive is corrupted.")
-
-            size = -size
+        # in the hot loop, avoid function calls
+        reader = self.data
+        size, = self.unpack_i32(reader.read(4))
 
         if size == 0:
             return ""
 
         data: bytes
         encoding: str
-        if LoadUCS2Char:
-            data = self.read(size * 2)[:-2]
+        if size < 0:
+            size = -size
+            data = reader.read(size * 2)[:-2]
             encoding = "utf-16-le"
         else:
-            data = self.read(size)[:-1]
+            data = reader.read(size)[:-1]
             encoding = "ascii"
+
         try:
             return data.decode(encoding)
         except Exception as e:
