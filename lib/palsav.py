@@ -10,6 +10,14 @@ def decompress_sav_to_gvas(data: bytes) -> tuple[bytes, int]:
     save_type = data[11]
     # Check for magic bytes
     if magic_bytes != MAGIC_BYTES:
+        if (
+            magic_bytes == b"\x00\x00\x00"
+            and uncompressed_len == 0
+            and compressed_len == 0
+        ):
+            raise Exception(
+                f"not a compressed Palworld save, found too many null bytes, this is likely corrupted"
+            )
         raise Exception(
             f"not a compressed Palworld save, found {magic_bytes} instead of {MAGIC_BYTES}"
         )
