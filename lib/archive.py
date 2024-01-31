@@ -615,7 +615,7 @@ class FArchiveWriter:
     def guid(self, u: Union[str, uuid.UUID, UUID]):
         uuid_writer(self, u)
 
-    def optional_uuid(self, u: Optional[Union[str, uuid.UUID, UUID]]):
+    def optional_guid(self, u: Optional[Union[str, uuid.UUID, UUID]]):
         if u is None:
             self.bool(False)
         else:
@@ -660,38 +660,38 @@ class FArchiveWriter:
         elif property_type == "StructProperty":
             size = self.struct(property)
         elif property_type == "IntProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.i32(property["value"])
             size = 4
         elif property_type == "Int64Property":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.i64(property["value"])
             size = 8
         elif property_type == "FixedPoint64Property":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.i32(property["value"])
             size = 4
         elif property_type == "FloatProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.float(property["value"])
             size = 4
         elif property_type == "StrProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = self.fstring(property["value"])
         elif property_type == "NameProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = self.fstring(property["value"])
         elif property_type == "EnumProperty":
             self.fstring(property["value"]["type"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = self.fstring(property["value"]["value"])
         elif property_type == "BoolProperty":
             self.bool(property["value"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = 0
         elif property_type == "ArrayProperty":
             self.fstring(property["array_type"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             array_writer = self.copy()
             array_writer.array_property(property["array_type"], property["value"])
             array_buf = array_writer.bytes()
@@ -700,7 +700,7 @@ class FArchiveWriter:
         elif property_type == "MapProperty":
             self.fstring(property["key_type"])
             self.fstring(property["value_type"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             map_writer = self.copy()
             map_writer.u32(0)
             map_writer.u32(len(property["value"]))
@@ -723,7 +723,7 @@ class FArchiveWriter:
     def struct(self, property: dict[str, Any]) -> int:
         self.fstring(property["struct_type"])
         self.guid(property["struct_id"])
-        self.optional_uuid(property.get("id", None))
+        self.optional_guid(property.get("id", None))
         start = self.data.tell()
         self.struct_value(property["struct_type"], property["value"])
         return self.data.tell() - start
