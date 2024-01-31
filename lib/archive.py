@@ -5,39 +5,54 @@ import uuid
 from typing import Any, Callable, Optional, Union
 
 
-def instance_id_reader(reader: "FArchiveReader"):
+class UUID:
+    """Wrapper around uuid.UUID to delay evaluation of UUIDs until necessary"""
+
+    __slots__ = ("raw_bytes", "parsed_uuid")
+    raw_bytes: bytes
+    parsed_uuid: uuid.UUID
+
+    def __init__(self, raw_bytes: bytes) -> None:
+        self.raw_bytes = raw_bytes
+        self.parsed_uuid = None
+
+    def __str__(self) -> str:
+        if not self.parsed_uuid:
+            b = self.raw_bytes
+            uuid_int = (
+                b[0xC]
+                + (b[0xD] << 8)
+                + (b[0xE] << 16)
+                + (b[0xF] << 24)
+                + (b[0x8] << 32)
+                + (b[0x9] << 40)
+                + (b[0xA] << 48)
+                + (b[0xB] << 56)
+                + (b[0x4] << 64)
+                + (b[0x5] << 72)
+                + (b[0x6] << 80)
+                + (b[0x7] << 88)
+                + (b[0x0] << 96)
+                + (b[0x1] << 104)
+                + (b[0x2] << 112)
+                + (b[0x3] << 120)
+            )
+            self.parsed_uuid = uuid.UUID(int=uuid_int)
+        return str(self.parsed_uuid)
+
+
+def instance_id_reader(reader: "FArchiveReader") -> dict[str, UUID]:
     return {
         "guid": reader.guid(),
         "instance_id": reader.guid(),
     }
 
 
-def uuid_reader(reader: "FArchiveReader"):
+def uuid_reader(reader: "FArchiveReader") -> UUID:
     b = reader.read(16)
     if len(b) != 16:
         raise Exception("could not read 16 bytes for uuid")
-    return uuid.UUID(
-        bytes=bytes(
-            [
-                b[0x3],
-                b[0x2],
-                b[0x1],
-                b[0x0],
-                b[0x7],
-                b[0x6],
-                b[0x5],
-                b[0x4],
-                b[0xB],
-                b[0xA],
-                b[0x9],
-                b[0x8],
-                b[0xF],
-                b[0xE],
-                b[0xD],
-                b[0xC],
-            ]
-        )
-    )
+    return UUID(b)
 
 
 class FArchiveReader:
@@ -52,16 +67,15 @@ class FArchiveReader:
         data,
         type_hints: dict[str, str] = {},
         custom_properties: dict[str, tuple[Callable, Callable]] = {},
+        debug: bool = os.environ.get("DEBUG", "0") == "1",
     ):
         self.data = io.BytesIO(data)
-        self.size = len(self.data.read())
-        self.data.seek(0)
+        self.size = len(data)
         self.type_hints = type_hints
         self.custom_properties = custom_properties
-        self.debug = os.environ.get("DEBUG", "0") == "1"
+        self.debug = debug
 
     def __enter__(self):
-        self.size = len(self.data.read())
         self.data.seek(0)
         return self
 
@@ -173,10 +187,10 @@ class FArchiveReader:
     def skip(self, size: int) -> None:
         self.data.read(size)
 
-    def guid(self) -> uuid.UUID:
+    def guid(self) -> UUID:
         return uuid_reader(self)
 
-    def optional_guid(self) -> Optional[uuid.UUID]:
+    def optional_guid(self) -> Optional[UUID]:
         return uuid_reader(self) if self.bool() else None
 
     def tarray(
@@ -395,7 +409,7 @@ class FArchiveReader:
         elif array_type == "ByteProperty":
             if size == count:
                 # Special case this and read faster in one go
-                return [b for b in self.read(size)]
+                return self.byte_list(count)
             else:
                 raise Exception("Labelled ByteProperty not implemented")
         else:
@@ -473,32 +487,34 @@ class FArchiveReader:
         }
 
 
-def uuid_writer(writer, s: Union[str, uuid.UUID]):
+def uuid_writer(writer, s: Union[str, uuid.UUID, UUID]):
     if isinstance(s, str):
         u = uuid.UUID(s)
         b = u.bytes
+    elif isinstance(s, UUID):
+        b = s.raw_bytes
     else:
         b = s.bytes
-    ub = bytes(
-        [
-            b[0x3],
-            b[0x2],
-            b[0x1],
-            b[0x0],
-            b[0x7],
-            b[0x6],
-            b[0x5],
-            b[0x4],
-            b[0xB],
-            b[0xA],
-            b[0x9],
-            b[0x8],
-            b[0xF],
-            b[0xE],
-            b[0xD],
-            b[0xC],
-        ]
-    )
+        ub = bytes(
+            [
+                b[0x3],
+                b[0x2],
+                b[0x1],
+                b[0x0],
+                b[0x7],
+                b[0x6],
+                b[0x5],
+                b[0x4],
+                b[0xB],
+                b[0xA],
+                b[0x9],
+                b[0x8],
+                b[0xF],
+                b[0xE],
+                b[0xD],
+                b[0xC],
+            ]
+        )
     writer.write(ub)
 
 
@@ -513,10 +529,14 @@ class FArchiveWriter:
     custom_properties: dict[str, tuple[Callable, Callable]]
     debug: bool
 
-    def __init__(self, custom_properties: dict[str, tuple[Callable, Callable]] = {}):
+    def __init__(
+        self,
+        custom_properties: dict[str, tuple[Callable, Callable]] = {},
+        debug: bool = os.environ.get("DEBUG", "0") == "1",
+    ):
         self.data = io.BytesIO()
         self.custom_properties = custom_properties
-        self.debug = os.environ.get("DEBUG", "0") == "1"
+        self.debug = debug
 
     def __enter__(self):
         self.data.seek(0)
@@ -588,10 +608,10 @@ class FArchiveWriter:
     def u(self, b: int):
         self.data.write(struct.pack("B", b))
 
-    def guid(self, u: Union[str, uuid.UUID]):
+    def guid(self, u: Union[str, uuid.UUID, UUID]):
         uuid_writer(self, u)
 
-    def optional_uuid(self, u: Optional[Union[str, uuid.UUID]]):
+    def optional_uuid(self, u: Optional[Union[str, uuid.UUID, UUID]]):
         if u is None:
             self.bool(False)
         else:

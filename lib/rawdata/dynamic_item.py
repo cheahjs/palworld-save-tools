@@ -18,7 +18,7 @@ def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
     if len(c_bytes) == 0:
         return None
     buf = bytes(c_bytes)
-    reader = FArchiveReader(buf)
+    reader = FArchiveReader(buf, debug=False)
     data = {}
     data["id"] = {
         "created_world_id": reader.guid(),

@@ -15,7 +15,7 @@ def decode(
 
 
 def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(b_bytes))
+    reader = FArchiveReader(bytes(b_bytes), debug=False)
     data = {}
     data["id"] = reader.guid()
     data["name"] = reader.fstring()

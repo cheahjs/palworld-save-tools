@@ -1,8 +1,10 @@
+import timeit
 import unittest
+import uuid
 
 from parameterized import parameterized
 
-from lib.archive import FArchiveReader, FArchiveWriter
+from lib.archive import UUID, FArchiveReader, FArchiveWriter
 
 
 class TestArchive(unittest.TestCase):
@@ -34,3 +36,66 @@ class TestArchive(unittest.TestCase):
         self.assertEqual(x, x_e)
         self.assertEqual(y, y_e)
         self.assertEqual(z, z_e)
+
+    def test_uuid_wrapper(self):
+        test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
+        expected = uuid.UUID(test_uuid)
+        b = expected.bytes
+        ue_bytes = bytes(
+            [
+                b[0x3],
+                b[0x2],
+                b[0x1],
+                b[0x0],
+                b[0x7],
+                b[0x6],
+                b[0x5],
+                b[0x4],
+                b[0xB],
+                b[0xA],
+                b[0x9],
+                b[0x8],
+                b[0xF],
+                b[0xE],
+                b[0xD],
+                b[0xC],
+            ]
+        )
+        wrapper = UUID(ue_bytes)
+        self.assertEqual(str(expected), str(wrapper))
+        print("standard UUID:")
+        print(
+            timeit.repeat(
+                "uuid.UUID(test_uuid)",
+                globals=locals(),
+                number=1000000,
+                setup="import uuid",
+            )
+        )
+        print("wrapper:")
+        print(
+            timeit.repeat(
+                "UUID(ue_bytes)",
+                globals=locals(),
+                number=1000000,
+                setup="from lib.archive import UUID",
+            )
+        )
+        print("standard to str:")
+        print(
+            timeit.repeat(
+                "str(a)",
+                globals=locals(),
+                number=1000000,
+                setup="import uuid; a = uuid.UUID(test_uuid)",
+            )
+        )
+        print("wrapper to str:")
+        print(
+            timeit.repeat(
+                "str(a)",
+                globals=locals(),
+                number=1000000,
+                setup="from lib.archive import UUID; a = UUID(ue_bytes)",
+            )
+        )

@@ -19,7 +19,7 @@ def decode(
 
 
 def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(group_bytes))
+    reader = FArchiveReader(bytes(group_bytes), debug=False)
     group_data = {
         "group_type": group_type,
         "group_id": reader.guid(),

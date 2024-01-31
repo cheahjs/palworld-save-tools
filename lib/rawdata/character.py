@@ -15,7 +15,7 @@ def decode(
 
 
 def decode_bytes(char_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(char_bytes))
+    reader = FArchiveReader(bytes(char_bytes), debug=False)
     char_data = {}
     char_data["object"] = reader.properties_until_end()
     char_data["unknown_bytes"] = reader.byte_list(4)
