@@ -46,6 +46,7 @@ class FArchiveReader:
     size: int
     type_hints: dict[str, str]
     custom_properties: dict[str, tuple[Callable, Callable]]
+    debug: bool
 
     def __init__(
         self,
@@ -58,6 +59,7 @@ class FArchiveReader:
         self.data.seek(0)
         self.type_hints = type_hints
         self.custom_properties = custom_properties
+        self.debug = os.environ.get("DEBUG", "0") == "1"
 
     def __enter__(self):
         self.size = len(self.data.read())
@@ -343,7 +345,7 @@ class FArchiveReader:
                 "a": self.float(),
             }
         else:
-            if os.environ.get("DEBUG", "0") == "1":
+            if self.debug:
                 print(f"Assuming struct type: {struct_type} ({path})")
             return self.properties_until_end(path)
 
@@ -501,10 +503,12 @@ class FArchiveWriter:
     data: io.BytesIO
     size: int
     custom_properties: dict[str, tuple[Callable, Callable]]
+    debug: bool
 
     def __init__(self, custom_properties: dict[str, tuple[Callable, Callable]] = {}):
         self.data = io.BytesIO()
         self.custom_properties = custom_properties
+        self.debug = os.environ.get("DEBUG", "0") == "1"
 
     def __enter__(self):
         self.data.seek(0)
@@ -712,7 +716,7 @@ class FArchiveWriter:
             self.float(value["b"])
             self.float(value["a"])
         else:
-            if os.environ.get("DEBUG", "0") == "1":
+            if self.debug:
                 print(f"Assuming struct type: {struct_type}")
             return self.properties(value)
 
