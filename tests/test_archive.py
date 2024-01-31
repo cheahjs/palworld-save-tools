@@ -1,4 +1,3 @@
-import timeit
 import unittest
 import uuid
 
@@ -63,39 +62,3 @@ class TestArchive(unittest.TestCase):
         )
         wrapper = UUID(ue_bytes)
         self.assertEqual(str(expected), str(wrapper))
-        print("standard UUID:")
-        print(
-            timeit.repeat(
-                "uuid.UUID(test_uuid)",
-                globals=locals(),
-                number=1000000,
-                setup="import uuid",
-            )
-        )
-        print("wrapper:")
-        print(
-            timeit.repeat(
-                "UUID(ue_bytes)",
-                globals=locals(),
-                number=1000000,
-                setup="from lib.archive import UUID",
-            )
-        )
-        print("standard to str:")
-        print(
-            timeit.repeat(
-                "str(a)",
-                globals=locals(),
-                number=1000000,
-                setup="import uuid; a = uuid.UUID(test_uuid)",
-            )
-        )
-        print("wrapper to str:")
-        print(
-            timeit.repeat(
-                "str(a)",
-                globals=locals(),
-                number=1000000,
-                setup="from lib.archive import UUID; a = UUID(ue_bytes)",
-            )
-        )
