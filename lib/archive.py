@@ -490,10 +490,8 @@ class FArchiveReader:
 
 def uuid_writer(writer, s: Union[str, uuid.UUID, UUID]):
     if isinstance(s, str):
-        ub = uuid.UUID(s).bytes
-    elif isinstance(s, UUID):
-        ub = s.raw_bytes
-    else:
+        s = uuid.UUID(s)
+    if isinstance(s, uuid.UUID):
         b = s.bytes
         ub = bytes(
             [
@@ -515,6 +513,8 @@ def uuid_writer(writer, s: Union[str, uuid.UUID, UUID]):
                 b[0xC],
             ]
         )
+    elif isinstance(s, UUID):
+        ub = s.raw_bytes
     writer.write(ub)
 
 
