@@ -121,32 +121,41 @@ class FArchiveReader:
                     f"Error decoding {encoding} string of length {size}: {bytes(data)}"
                 ) from e
 
+    unpack_i16 = struct.Struct("h").unpack
     def i16(self) -> int:
-        return struct.unpack("h", self.data.read(2))[0]
+        return self.unpack_i16(self.data.read(2))[0]
 
+    unpack_u16 = struct.Struct("H").unpack
     def u16(self) -> int:
-        return struct.unpack("H", self.data.read(2))[0]
+        return self.unpack_u16(self.data.read(2))[0]
 
+    unpack_i32 = struct.Struct("i").unpack
     def i32(self) -> int:
-        return struct.unpack("i", self.data.read(4))[0]
+        return self.unpack_i32(self.data.read(4))[0]
 
+    unpack_u32 = struct.Struct("I").unpack
     def u32(self) -> int:
-        return struct.unpack("I", self.data.read(4))[0]
+        return self.unpack_u32(self.data.read(4))[0]
 
+    unpack_i64 = struct.Struct("q").unpack
     def i64(self) -> int:
-        return struct.unpack("q", self.data.read(8))[0]
+        return self.unpack_i64(self.data.read(8))[0]
 
+    unpack_u64 = struct.Struct("Q").unpack
     def u64(self) -> int:
-        return struct.unpack("Q", self.data.read(8))[0]
+        return self.unpack_u64(self.data.read(8))[0]
 
+    unpack_float = struct.Struct("f").unpack
     def float(self) -> float:
-        return struct.unpack("f", self.data.read(4))[0]
+        return self.unpack_float(self.data.read(4))[0]
 
+    unpack_double = struct.Struct("d").unpack
     def double(self) -> float:
-        return struct.unpack("d", self.data.read(8))[0]
+        return self.unpack_double(self.data.read(8))[0]
 
+    unpack_byte = struct.Struct("B").unpack
     def byte(self) -> int:
-        return struct.unpack("B", self.data.read(1))[0]
+        return self.unpack_byte(self.data.read(1))[0]
 
     def byte_list(self, size: int) -> list[int]:
         return struct.unpack(str(size) + "B", self.data.read(size))
