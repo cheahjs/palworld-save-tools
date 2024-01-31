@@ -104,7 +104,7 @@ class FArchiveReader:
     def fstring(self) -> str:
         # in the hot loop, avoid function calls
         reader = self.data
-        size, = self.unpack_i32(reader.read(4))
+        (size,) = self.unpack_i32(reader.read(4))
 
         if size == 0:
             return ""
