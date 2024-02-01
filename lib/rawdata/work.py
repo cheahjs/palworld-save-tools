@@ -212,7 +212,7 @@ def encode_bytes(p: dict[str, Any], work_type: str) -> bytes:
     writer = FArchiveWriter()
 
     # Handle base serialization
-    if p["WorkableType"]["value"]["value"] in WORK_BASE_TYPES:
+    if work_type in WORK_BASE_TYPES:
         writer.guid(p["id"])
         writer.double(p["workable_bounds"]["location"]["x"])
         writer.double(p["workable_bounds"]["location"]["y"])
