@@ -1,14 +1,6 @@
 # palworld-save-tools
 Tools for converting Palworld .sav files to JSON and back.
 
-> [!IMPORTANT]
-> This tool has changed how the JSON files are formatted starting with v0.9.
-> You cannot load JSON files created by older versions of the tool, and other tools that depend on the JSON output of `palworld-save-tools` will break.
-> In exchange, you will no longer need `uesave-rs`, the tool runs faster, and doesn't use as much RAM.
-
-> [!CAUTION]
-> Any versions older than v0.4 will create corrupt `Level.sav` files when converting from JSON to SAV. Please make sure to update to avoid data corruption.
-
 This tool currently supports additional parsing of the following data in the `Level.sav` not handled by `uesave` or other non-Palworld aware Unreal save editors:
 
 1. `GroupSaveDataMap`
