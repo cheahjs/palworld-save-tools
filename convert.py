@@ -31,6 +31,12 @@ def main():
         "-o",
         help="Output file (default: <filename>.json or <filename>.sav)",
     )
+    parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Force overwriting output file if it already exists without prompting",
+    )
     parser.add_argument("--minify-json", action="store_true", help="Minify JSON output")
     args = parser.parse_args()
 
@@ -50,22 +56,23 @@ def main():
             output_path = args.filename + ".json"
         else:
             output_path = args.output
-        convert_sav_to_json(args.filename, output_path, args.minify_json)
+        convert_sav_to_json(args.filename, output_path, args.force, args.minify_json)
 
     if args.from_json or args.filename.endswith(".json"):
         if not args.output:
             output_path = args.filename.replace(".json", "")
         else:
             output_path = args.output
-        convert_json_to_sav(args.filename, output_path)
+        convert_json_to_sav(args.filename, output_path, args.force)
 
 
-def convert_sav_to_json(filename, output_path, minify):
+def convert_sav_to_json(filename, output_path, force, minify):
     print(f"Converting {filename} to JSON, saving to {output_path}")
     if os.path.exists(output_path):
         print(f"{output_path} already exists, this will overwrite the file")
-        if not confirm_prompt("Are you sure you want to continue?"):
-            exit(1)
+        if not force:
+            if not confirm_prompt("Are you sure you want to continue?"):
+                exit(1)
     print(f"Decompressing sav file")
     with open(filename, "rb") as f:
         data = f.read()
@@ -78,12 +85,13 @@ def convert_sav_to_json(filename, output_path, minify):
         json.dump(gvas_file.dump(), f, indent=indent, cls=CustomEncoder)
 
 
-def convert_json_to_sav(filename, output_path):
+def convert_json_to_sav(filename, output_path, force):
     print(f"Converting {filename} to SAV, saving to {output_path}")
     if os.path.exists(output_path):
         print(f"{output_path} already exists, this will overwrite the file")
-        if not confirm_prompt("Are you sure you want to continue?"):
-            exit(1)
+        if not force:
+            if not confirm_prompt("Are you sure you want to continue?"):
+                exit(1)
     print(f"Loading JSON from {filename}")
     with open(filename, "r", encoding="utf8") as f:
         data = json.load(f)
