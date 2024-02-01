@@ -66,7 +66,7 @@ def main():
         convert_json_to_sav(args.filename, output_path, args.force)
 
 
-def convert_sav_to_json(filename, output_path, force, minify):
+def convert_sav_to_json(filename, output_path, force=False, minify=False):
     print(f"Converting {filename} to JSON, saving to {output_path}")
     if os.path.exists(output_path):
         print(f"{output_path} already exists, this will overwrite the file")
@@ -85,7 +85,7 @@ def convert_sav_to_json(filename, output_path, force, minify):
         json.dump(gvas_file.dump(), f, indent=indent, cls=CustomEncoder)
 
 
-def convert_json_to_sav(filename, output_path, force):
+def convert_json_to_sav(filename, output_path, force=False):
     print(f"Converting {filename} to SAV, saving to {output_path}")
     if os.path.exists(output_path):
         print(f"{output_path} already exists, this will overwrite the file")
