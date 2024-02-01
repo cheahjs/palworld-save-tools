@@ -233,7 +233,6 @@ def encode_bytes(p: dict[str, Any], work_type: str) -> bytes:
         writer.guid(p["owner_map_object_concrete_model_id"])
         writer.byte(p["current_state"])
         writer.tarray(
-            p["assign_locations"],
             lambda w, l: (
                 w.double(l["location"]["x"]),
                 w.double(l["location"]["y"]),
@@ -242,6 +241,7 @@ def encode_bytes(p: dict[str, Any], work_type: str) -> bytes:
                 w.double(l["facing_direction"]["y"]),
                 w.double(l["facing_direction"]["z"]),
             ),
+            p["assign_locations"],
         )
         writer.byte(p["behaviour_type"])
         writer.fstring(p["assign_define_data_id"])
