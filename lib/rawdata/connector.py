@@ -29,7 +29,7 @@ def connect_info_item_writer(writer: FArchiveWriter, properties: dict[str, Any])
 def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
     if len(c_bytes) == 0:
         return None
-    reader = FArchiveReader(bytes(c_bytes))
+    reader = FArchiveReader(bytes(c_bytes), debug=False)
     data = {}
     data["supported_level"] = reader.i32()
     data["connect"] = {

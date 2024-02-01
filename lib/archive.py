@@ -1,44 +1,86 @@
 import io
-import math
 import os
 import struct
 import uuid
 from typing import Any, Callable, Optional, Union
 
 
-def instance_id_reader(reader: "FArchiveReader"):
+class UUID:
+    """Wrapper around uuid.UUID to delay evaluation of UUIDs until necessary"""
+
+    __slots__ = ("raw_bytes", "parsed_uuid")
+    raw_bytes: bytes
+    parsed_uuid: uuid.UUID
+
+    def __init__(self, raw_bytes: bytes) -> None:
+        self.raw_bytes = raw_bytes
+        self.parsed_uuid = None
+
+    def from_str(s: str) -> "UUID":
+        b = uuid.UUID(s).bytes
+        return UUID(
+            bytes(
+                [
+                    b[0x3],
+                    b[0x2],
+                    b[0x1],
+                    b[0x0],
+                    b[0x7],
+                    b[0x6],
+                    b[0x5],
+                    b[0x4],
+                    b[0xB],
+                    b[0xA],
+                    b[0x9],
+                    b[0x8],
+                    b[0xF],
+                    b[0xE],
+                    b[0xD],
+                    b[0xC],
+                ]
+            )
+        )
+
+    def __str__(self) -> str:
+        if not self.parsed_uuid:
+            b = self.raw_bytes
+            uuid_int = (
+                b[0xC]
+                + (b[0xD] << 8)
+                + (b[0xE] << 16)
+                + (b[0xF] << 24)
+                + (b[0x8] << 32)
+                + (b[0x9] << 40)
+                + (b[0xA] << 48)
+                + (b[0xB] << 56)
+                + (b[0x4] << 64)
+                + (b[0x5] << 72)
+                + (b[0x6] << 80)
+                + (b[0x7] << 88)
+                + (b[0x0] << 96)
+                + (b[0x1] << 104)
+                + (b[0x2] << 112)
+                + (b[0x3] << 120)
+            )
+            self.parsed_uuid = uuid.UUID(int=uuid_int)
+        return str(self.parsed_uuid)
+
+    def __eq__(self, __value: object) -> bool:
+        return str(self) == str(__value)
+
+
+def instance_id_reader(reader: "FArchiveReader") -> dict[str, UUID]:
     return {
         "guid": reader.guid(),
         "instance_id": reader.guid(),
     }
 
 
-def uuid_reader(reader: "FArchiveReader"):
+def uuid_reader(reader: "FArchiveReader") -> UUID:
     b = reader.read(16)
     if len(b) != 16:
         raise Exception("could not read 16 bytes for uuid")
-    return uuid.UUID(
-        bytes=bytes(
-            [
-                b[0x3],
-                b[0x2],
-                b[0x1],
-                b[0x0],
-                b[0x7],
-                b[0x6],
-                b[0x5],
-                b[0x4],
-                b[0xB],
-                b[0xA],
-                b[0x9],
-                b[0x8],
-                b[0xF],
-                b[0xE],
-                b[0xD],
-                b[0xC],
-            ]
-        )
-    )
+    return UUID(b)
 
 
 class FArchiveReader:
@@ -46,21 +88,22 @@ class FArchiveReader:
     size: int
     type_hints: dict[str, str]
     custom_properties: dict[str, tuple[Callable, Callable]]
+    debug: bool
 
     def __init__(
         self,
         data,
         type_hints: dict[str, str] = {},
         custom_properties: dict[str, tuple[Callable, Callable]] = {},
+        debug: bool = os.environ.get("DEBUG", "0") == "1",
     ):
         self.data = io.BytesIO(data)
-        self.size = len(self.data.read())
-        self.data.seek(0)
+        self.size = len(data)
         self.type_hints = type_hints
         self.custom_properties = custom_properties
+        self.debug = debug
 
     def __enter__(self):
-        self.size = len(self.data.read())
         self.data.seek(0)
         return self
 
@@ -87,26 +130,23 @@ class FArchiveReader:
         return self.byte() > 0
 
     def fstring(self) -> str:
-        size = self.i32()
-        LoadUCS2Char: bool = size < 0
-
-        if LoadUCS2Char:
-            if size == -2147483648:
-                raise Exception("Archive is corrupted.")
-
-            size = -size
+        # in the hot loop, avoid function calls
+        reader = self.data
+        (size,) = self.unpack_i32(reader.read(4))
 
         if size == 0:
             return ""
 
         data: bytes
         encoding: str
-        if LoadUCS2Char:
-            data = self.read(size * 2)[:-2]
+        if size < 0:
+            size = -size
+            data = reader.read(size * 2)[:-2]
             encoding = "utf-16-le"
         else:
-            data = self.read(size)[:-1]
+            data = reader.read(size)[:-1]
             encoding = "ascii"
+
         try:
             return data.decode(encoding)
         except Exception as e:
@@ -121,32 +161,50 @@ class FArchiveReader:
                     f"Error decoding {encoding} string of length {size}: {bytes(data)}"
                 ) from e
 
+    unpack_i16 = struct.Struct("h").unpack
+
     def i16(self) -> int:
-        return struct.unpack("h", self.data.read(2))[0]
+        return self.unpack_i16(self.data.read(2))[0]
+
+    unpack_u16 = struct.Struct("H").unpack
 
     def u16(self) -> int:
-        return struct.unpack("H", self.data.read(2))[0]
+        return self.unpack_u16(self.data.read(2))[0]
+
+    unpack_i32 = struct.Struct("i").unpack
 
     def i32(self) -> int:
-        return struct.unpack("i", self.data.read(4))[0]
+        return self.unpack_i32(self.data.read(4))[0]
+
+    unpack_u32 = struct.Struct("I").unpack
 
     def u32(self) -> int:
-        return struct.unpack("I", self.data.read(4))[0]
+        return self.unpack_u32(self.data.read(4))[0]
+
+    unpack_i64 = struct.Struct("q").unpack
 
     def i64(self) -> int:
-        return struct.unpack("q", self.data.read(8))[0]
+        return self.unpack_i64(self.data.read(8))[0]
+
+    unpack_u64 = struct.Struct("Q").unpack
 
     def u64(self) -> int:
-        return struct.unpack("Q", self.data.read(8))[0]
+        return self.unpack_u64(self.data.read(8))[0]
+
+    unpack_float = struct.Struct("f").unpack
 
     def float(self) -> float:
-        return struct.unpack("f", self.data.read(4))[0]
+        return self.unpack_float(self.data.read(4))[0]
+
+    unpack_double = struct.Struct("d").unpack
 
     def double(self) -> float:
-        return struct.unpack("d", self.data.read(8))[0]
+        return self.unpack_double(self.data.read(8))[0]
+
+    unpack_byte = struct.Struct("B").unpack
 
     def byte(self) -> int:
-        return struct.unpack("B", self.data.read(1))[0]
+        return self.unpack_byte(self.data.read(1))[0]
 
     def byte_list(self, size: int) -> list[int]:
         return struct.unpack(str(size) + "B", self.data.read(size))
@@ -154,11 +212,15 @@ class FArchiveReader:
     def skip(self, size: int) -> None:
         self.data.read(size)
 
-    def guid(self) -> uuid.UUID:
-        return uuid_reader(self)
+    def guid(self) -> UUID:
+        # in the hot loop, avoid function calls
+        return UUID(self.data.read(16))
 
-    def optional_guid(self) -> Optional[uuid.UUID]:
-        return uuid_reader(self) if self.bool() else None
+    def optional_guid(self) -> Optional[UUID]:
+        # in the hot loop, avoid function calls
+        if self.data.read(1)[0]:
+            return UUID(self.data.read(16))
+        return None
 
     def tarray(
         self, type_reader: Callable[["FArchiveReader"], dict[str, Any]]
@@ -334,7 +396,7 @@ class FArchiveReader:
                 "a": self.float(),
             }
         else:
-            if os.environ.get("DEBUG", "0") == "1":
+            if self.debug:
                 print(f"Assuming struct type: {struct_type} ({path})")
             return self.properties_until_end(path)
 
@@ -366,20 +428,24 @@ class FArchiveReader:
 
     def array_value(self, array_type: str, count: int, size: int, path: str):
         values = []
-        for _ in range(count):
-            if array_type == "EnumProperty":
-                values.append(self.fstring())
-            elif array_type == "NameProperty":
-                values.append(self.fstring())
-            elif array_type == "Guid":
-                values.append(self.guid())
-            elif array_type == "ByteProperty":
-                if size == count:
-                    values.append(self.byte())
-                else:
-                    raise Exception("Labelled ByteProperty not implemented")
+        decode_func: Callable
+        if array_type == "EnumProperty":
+            decode_func = self.fstring
+        elif array_type == "NameProperty":
+            decode_func = self.fstring
+        elif array_type == "Guid":
+            decode_func = self.guid
+        elif array_type == "ByteProperty":
+            if size == count:
+                # Special case this and read faster in one go
+                return self.byte_list(count)
             else:
-                raise Exception(f"Unknown array type: {array_type} ({path})")
+                raise Exception("Labelled ByteProperty not implemented")
+        else:
+            raise Exception(f"Unknown array type: {array_type} ({path})")
+        for _ in range(count):
+            values.append(decode_func())
+
         return values
 
     def compressed_short_rotator(self) -> tuple[float, float, float]:
@@ -450,32 +516,33 @@ class FArchiveReader:
         }
 
 
-def uuid_writer(writer, s: Union[str, uuid.UUID]):
+def uuid_writer(writer, s: Union[str, uuid.UUID, UUID]):
     if isinstance(s, str):
-        u = uuid.UUID(s)
-        b = u.bytes
-    else:
+        s = uuid.UUID(s)
+    if isinstance(s, uuid.UUID):
         b = s.bytes
-    ub = bytes(
-        [
-            b[0x3],
-            b[0x2],
-            b[0x1],
-            b[0x0],
-            b[0x7],
-            b[0x6],
-            b[0x5],
-            b[0x4],
-            b[0xB],
-            b[0xA],
-            b[0x9],
-            b[0x8],
-            b[0xF],
-            b[0xE],
-            b[0xD],
-            b[0xC],
-        ]
-    )
+        ub = bytes(
+            [
+                b[0x3],
+                b[0x2],
+                b[0x1],
+                b[0x0],
+                b[0x7],
+                b[0x6],
+                b[0x5],
+                b[0x4],
+                b[0xB],
+                b[0xA],
+                b[0x9],
+                b[0x8],
+                b[0xF],
+                b[0xE],
+                b[0xD],
+                b[0xC],
+            ]
+        )
+    elif isinstance(s, UUID):
+        ub = s.raw_bytes
     writer.write(ub)
 
 
@@ -488,10 +555,16 @@ class FArchiveWriter:
     data: io.BytesIO
     size: int
     custom_properties: dict[str, tuple[Callable, Callable]]
+    debug: bool
 
-    def __init__(self, custom_properties: dict[str, tuple[Callable, Callable]] = {}):
+    def __init__(
+        self,
+        custom_properties: dict[str, tuple[Callable, Callable]] = {},
+        debug: bool = os.environ.get("DEBUG", "0") == "1",
+    ):
         self.data = io.BytesIO()
         self.custom_properties = custom_properties
+        self.debug = debug
 
     def __enter__(self):
         self.data.seek(0)
@@ -563,10 +636,10 @@ class FArchiveWriter:
     def u(self, b: int):
         self.data.write(struct.pack("B", b))
 
-    def guid(self, u: Union[str, uuid.UUID]):
+    def guid(self, u: Union[str, uuid.UUID, UUID]):
         uuid_writer(self, u)
 
-    def optional_uuid(self, u: Optional[Union[str, uuid.UUID]]):
+    def optional_guid(self, u: Optional[Union[str, uuid.UUID, UUID]]):
         if u is None:
             self.bool(False)
         else:
@@ -611,38 +684,38 @@ class FArchiveWriter:
         elif property_type == "StructProperty":
             size = self.struct(property)
         elif property_type == "IntProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.i32(property["value"])
             size = 4
         elif property_type == "Int64Property":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.i64(property["value"])
             size = 8
         elif property_type == "FixedPoint64Property":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.i32(property["value"])
             size = 4
         elif property_type == "FloatProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             self.float(property["value"])
             size = 4
         elif property_type == "StrProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = self.fstring(property["value"])
         elif property_type == "NameProperty":
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = self.fstring(property["value"])
         elif property_type == "EnumProperty":
             self.fstring(property["value"]["type"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = self.fstring(property["value"]["value"])
         elif property_type == "BoolProperty":
             self.bool(property["value"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             size = 0
         elif property_type == "ArrayProperty":
             self.fstring(property["array_type"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             array_writer = self.copy()
             array_writer.array_property(property["array_type"], property["value"])
             array_buf = array_writer.bytes()
@@ -651,7 +724,7 @@ class FArchiveWriter:
         elif property_type == "MapProperty":
             self.fstring(property["key_type"])
             self.fstring(property["value_type"])
-            self.optional_uuid(property.get("id", None))
+            self.optional_guid(property.get("id", None))
             map_writer = self.copy()
             map_writer.u32(0)
             map_writer.u32(len(property["value"]))
@@ -674,7 +747,7 @@ class FArchiveWriter:
     def struct(self, property: dict[str, Any]) -> int:
         self.fstring(property["struct_type"])
         self.guid(property["struct_id"])
-        self.optional_uuid(property.get("id", None))
+        self.optional_guid(property.get("id", None))
         start = self.data.tell()
         self.struct_value(property["struct_type"], property["value"])
         return self.data.tell() - start
@@ -699,7 +772,7 @@ class FArchiveWriter:
             self.float(value["b"])
             self.float(value["a"])
         else:
-            if os.environ.get("DEBUG", "0") == "1":
+            if self.debug:
                 print(f"Assuming struct type: {struct_type}")
             return self.properties(value)
 

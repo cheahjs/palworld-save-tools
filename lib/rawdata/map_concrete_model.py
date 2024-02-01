@@ -37,7 +37,7 @@ from lib.archive import *
 # def decode_map_concrete_model_bytes(m_bytes: Sequence[int]) -> dict[str, Any]:
 #     if len(m_bytes) == 0:
 #         return None
-#     reader = FArchiveReader(bytes(m_bytes))
+#     reader = FArchiveReader(bytes(m_bytes), debug=False)
 #     map_concrete_model = {}
 
 #     if not reader.eof():

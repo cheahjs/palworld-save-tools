@@ -71,7 +71,7 @@ def module_passive_effect_reader(reader: FArchiveReader) -> dict[str, Any]:
 
 
 def decode_bytes(b_bytes: Sequence[int], module_type: str) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(b_bytes))
+    reader = FArchiveReader(bytes(b_bytes), debug=False)
     data = {}
     if module_type in NO_OP_TYPES:
         pass

@@ -15,7 +15,7 @@ def decode(
 
 
 def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(b_bytes))
+    reader = FArchiveReader(bytes(b_bytes), debug=False)
     data = {}
     data["model_instance_id"] = reader.guid()
     pitch, yaw, roll = reader.compressed_short_rotator()
