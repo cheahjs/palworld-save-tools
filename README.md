@@ -71,3 +71,4 @@ Additional command line arguments:
 1. `--from-json`: Force JSON to SAV conversion regardless of file extension
 1. `--output`: Override the default output path
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
+1. `--force`: Overwrite output files if they exist without prompting
