@@ -184,6 +184,8 @@ def decode_work_assign_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
 
+    return data
+
 
 def encode(
     writer: FArchiveWriter, property_type: str, properties: dict[str, Any]
@@ -199,11 +201,13 @@ def encode(
             ]
         }
         for work_assign in work_element["WorkAssignMap"]["value"]:
-            work_assign_bytes = encode_work_assign_bytes(
-                work_assign["value"]["RawData"]["value"]
-            )
             work_assign["value"]["RawData"]["value"] = {
-                "values": [b for b in work_assign_bytes]
+                "values": [
+                    b
+                    for b in encode_work_assign_bytes(
+                        work_assign["value"]["RawData"]["value"]
+                    )
+                ]
             }
     return writer.property_inner(property_type, properties)
 
