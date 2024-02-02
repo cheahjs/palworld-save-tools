@@ -85,3 +85,14 @@ The tools have the following commands in interactive mode:
 1. `MigratePlayer(old_uid,new_uid)`: Migrate the player from old PlayerUId to new PlayerUId
 1. `CopyPlayer(old_uid,new_uid, backup_wsd)`: Copy the player from old PlayerUId to new PlayerUId
 1. `Save()`: Save the file and exit
+
+Migrate difference server to single server sample:
+
+1. The player login to the new server to create player instance for new server, and then stop the server
+1. Copy old server Level.sav to `SaveGames/0/<Server ID>/Old-Level.sav`
+1. Copy old server `Players/xxxxxxxx-0000-0000-0000-000000000000.sav` to `SaveGames/0/<Server ID>/Players/xxxxxxxx-0000-0000-0000-000000000001.sav`
+1. Use interactive mode `python -i palworld-cleanup-tools.py Level.sav`
+1. Use following command `OpenBackup("Old-Level.sav")`
+1. Next step `CopyPlayer("xxxxxxxx-0000-0000-0000-000000000001", "xxxxxxxx-0000-0000-0000-000000000000", backup_wsd)` for every require to migrate player
+1. Next step `Save()`
+1. And remove all the old -000000000001.sav, and start the Palworld Server.
