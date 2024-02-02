@@ -27,9 +27,10 @@ instanceMapping = None
 output_path = None
 args = None
 player = None
+filetime = None
 
 def main():
-    global wsd, output_file, gvas_file, playerMapping, instanceMapping, output_path, args
+    global wsd, output_file, gvas_file, playerMapping, instanceMapping, output_path, args, filetime
 
     parser = argparse.ArgumentParser(
         prog="palworld-cleanup-tools",
@@ -49,7 +50,7 @@ def main():
     parser.add_argument(
         "--fix-capture",
         action="store_true",
-        help="Fix the too many capture logs",
+        help="Fix the too many capture logs (not need after 1.4.0)",
     )
     parser.add_argument(
         "--output",
@@ -68,6 +69,7 @@ def main():
         exit(1)
 
     print(f"Loading {args.filename}...")
+    filetime = os.stat(args.filename).st_mtime
     with open(args.filename, "rb") as f:
         # Read the file
         data = f.read()
@@ -653,6 +655,27 @@ def FixMissing(dry_run=False):
             wsd['CharacterSaveParameterMap']['value'].remove(item)
 
 
+def TickToHuman(tick):
+    seconds = (wsd['GameTimeSaveData']['value']['RealDateTimeTicks']['value'] - tick) / 1e7
+    s = ""
+    if seconds > 86400:
+        s += " %d d" % (seconds // 86400)
+        seconds %= 86400
+    if seconds > 3600:
+        s += " %d h" % (seconds // 3600)
+        seconds %= 3600
+    if seconds > 60:
+        s += " %d m" % (seconds // 60)
+        seconds %= 60
+    s += " %d s" % seconds
+    return s
+
+def TickToLocal(tick):
+    ts = filetime + (tick - wsd['GameTimeSaveData']['value']['RealDateTimeTicks']['value']) / 1e7
+    t = datetime.datetime.fromtimestamp(ts)
+    return t.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def ShowGuild(fix_capture=False):
     # Remove Unused in GroupSaveDataMap
     for group_data in wsd['GroupSaveDataMap']['value']:
@@ -668,9 +691,10 @@ def ShowGuild(fix_capture=False):
                 mapObjectMeta['guild_name'], str(mapObjectMeta['admin_player_uid']), str(mapObjectMeta['group_id']),
                 len(mapObjectMeta['individual_character_handle_ids'])))
             for player in mapObjectMeta['players']:
-                print("    Player \033[93m%s\033[0m [\033[92m%s\033[0m] Last Online: %d" % (
+                print("    Player \033[93m %-30s \033[0m\t[\033[92m%s\033[0m] Last Online: %s - %s" % (
                     player['player_info']['player_name'], str(player['player_uid']),
-                    player['player_info']['last_online_real_time']))
+                    TickToLocal(player['player_info']['last_online_real_time']),
+                    TickToHuman(player['player_info']['last_online_real_time'])))
             removeItems = []
             for ind_char in mapObjectMeta['individual_character_handle_ids']:
                 if str(ind_char['instance_id']) in instanceMapping:
@@ -685,11 +709,11 @@ def ShowGuild(fix_capture=False):
                 else:
                     print("    \033[31mInvalid Character %s\033[0m" % (str(ind_char['instance_id'])))
                     removeItems.append(ind_char)
+            print("After remove character count: %d" % (len(
+                group_data['value']['RawData']['value']['individual_character_handle_ids']) - len(removeItems)))
             if fix_capture:
                 for rmitem in removeItems:
                     item['individual_character_handle_ids'].remove(rmitem)
-            print("After remove character count: %d" % len(
-                group_data['value']['RawData']['value']['individual_character_handle_ids']))
             print()
         # elif str(group_data['value']['GroupType']['value']['value']) == "EPalGroupType::Neutral":
         #     item = group_data['value']['RawData']['value']
