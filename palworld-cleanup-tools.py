@@ -625,7 +625,7 @@ def ShowPlayers():
                     playerMeta[player_k] = playerParams[player_k]['value']
                 playerMeta['InstanceId'] = item['key']['InstanceId']['value']
                 playerMapping[str(item['key']['PlayerUId']['value'])] = playerMeta
-            print("%s [\033[32m%s\033[0m] -> Level %2d  %s" % (
+            print("PlayerUId \033[32m %s \033[0m [InstanceID \033[33m %s \033[0m] -> Level %2d  %s" % (
                 item['key']['PlayerUId']['value'], playerMeta['InstanceId'],
                 playerMeta['Level'] if 'Level' in playerMeta else -1, playerMeta['NickName']))
         else:
