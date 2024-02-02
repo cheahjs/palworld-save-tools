@@ -179,7 +179,7 @@ def encode_bytes(p: dict[str, Any], work_type: str) -> bytes:
     if work_type in WORK_BASE_TYPES:
         writer.guid(p["id"])
         writer.vector_dict(p["workable_bounds"]["location"])
-        writer.vector_dict(p["workable_bounds"]["rotation"])
+        writer.quat_dict(p["workable_bounds"]["rotation"])
         writer.vector_dict(p["workable_bounds"]["box_sphere_bounds"]["origin"])
         writer.vector_dict(p["workable_bounds"]["box_sphere_bounds"]["box_extent"])
         writer.double(p["workable_bounds"]["box_sphere_bounds"]["sphere_radius"])
