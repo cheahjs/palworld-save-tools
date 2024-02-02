@@ -4,6 +4,7 @@ import unittest
 
 from parameterized import parameterized
 
+from lib.archive import FArchiveReader
 from lib.json_tools import CustomEncoder
 from lib.rawdata import character, foliage_model_instance, group
 
@@ -23,7 +24,7 @@ class TestRawData(unittest.TestCase):
     )
     def test_character(self, name, test_base64):
         test_data = base64.b64decode(test_base64)
-        properties = character.decode_bytes(test_data)
+        properties = character.decode_bytes(FArchiveReader(b""), test_data)
         json_str = json.dumps(
             properties, cls=CustomEncoder, ensure_ascii=False, indent=2
         )
@@ -46,7 +47,7 @@ class TestRawData(unittest.TestCase):
     )
     def test_group(self, group_type, test_base64):
         test_data = base64.b64decode(test_base64)
-        properties = group.decode_bytes(test_data, group_type)
+        properties = group.decode_bytes(FArchiveReader(b""), test_data, group_type)
         json_str = json.dumps(
             properties, cls=CustomEncoder, ensure_ascii=False, indent=2
         )
@@ -65,7 +66,7 @@ class TestRawData(unittest.TestCase):
     )
     def test_foliage_model_instance(self, test_base64):
         test_data = base64.b64decode(test_base64)
-        properties = foliage_model_instance.decode_bytes(test_data)
+        properties = foliage_model_instance.decode_bytes(FArchiveReader(b""), test_data)
         json_str = json.dumps(
             properties, cls=CustomEncoder, ensure_ascii=False, indent=2
         )

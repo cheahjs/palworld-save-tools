@@ -10,15 +10,17 @@ def decode(
         raise Exception(f"Expected ArrayProperty, got {type_name}")
     value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
-    value["value"] = decode_bytes(data_bytes)
+    value["value"] = decode_bytes(reader, data_bytes)
     return value
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
+def decode_bytes(
+    parent_reader: FArchiveReader, c_bytes: Sequence[int]
+) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
     buf = bytes(c_bytes)
-    reader = FArchiveReader(buf, debug=False)
+    reader = parent_reader.internal_copy(buf, debug=False)
     data: dict[str, Any] = {}
     data["id"] = {
         "created_world_id": reader.guid(),

@@ -1,4 +1,5 @@
 import io
+import math
 import os
 import struct
 import uuid
@@ -107,12 +108,14 @@ class FArchiveReader:
         type_hints: dict[str, str] = {},
         custom_properties: dict[str, tuple[Callable, Callable]] = {},
         debug: bool = os.environ.get("DEBUG", "0") == "1",
+        allow_nan: bool = True,
     ):
         self.data = io.BytesIO(data)
         self.size = len(data)
         self.type_hints = type_hints
         self.custom_properties = custom_properties
         self.debug = debug
+        self.allow_nan = allow_nan
 
     def __enter__(self):
         self.data.seek(0)
@@ -120,6 +123,15 @@ class FArchiveReader:
 
     def __exit__(self, type, value, traceback):
         self.data.close()
+
+    def internal_copy(self, data, debug: bool) -> "FArchiveReader":
+        return FArchiveReader(
+            data,
+            self.type_hints,
+            self.custom_properties,
+            debug=debug,
+            allow_nan=self.allow_nan,
+        )
 
     def get_type_or(self, path: str, default: str):
         if path in self.type_hints:
@@ -204,13 +216,23 @@ class FArchiveReader:
 
     unpack_float = struct.Struct("f").unpack
 
-    def float(self) -> _float:
-        return FArchiveReader.unpack_float(self.data.read(4))[0]
+    def float(self) -> Optional[_float]:
+        val = FArchiveReader.unpack_float(self.data.read(4))[0]
+        if self.allow_nan:
+            return val
+        if val == math.nan or val == math.inf or val == -math.inf:
+            return None
+        return val
 
     unpack_double = struct.Struct("d").unpack
 
-    def double(self) -> _float:
-        return FArchiveReader.unpack_double(self.data.read(8))[0]
+    def double(self) -> Optional[_float]:
+        val = FArchiveReader.unpack_double(self.data.read(8))[0]
+        if self.allow_nan:
+            return val
+        if val == math.nan or val == math.inf or val == -math.inf:
+            return None
+        return val
 
     unpack_byte = struct.Struct("B").unpack
 
@@ -465,7 +487,9 @@ class FArchiveReader:
         value = int.from_bytes(b, "little")
         return value
 
-    def packed_vector(self, scale_factor: int) -> tuple[_float, _float, _float]:
+    def packed_vector(
+        self, scale_factor: int
+    ) -> tuple[Optional[_float], Optional[_float], Optional[_float]]:
         component_bit_count_and_extra_info = self.u32()
         component_bit_count = component_bit_count_and_extra_info & 63
         extra_info = component_bit_count_and_extra_info >> 6
@@ -488,20 +512,22 @@ class FArchiveReader:
             else:
                 return (self.float(), self.float(), self.float())
 
-    def vector(self) -> tuple[_float, _float, _float]:
+    def vector(self) -> tuple[Optional[_float], Optional[_float], Optional[_float]]:
         return (self.double(), self.double(), self.double())
 
-    def vector_dict(self) -> dict[str, _float]:
+    def vector_dict(self) -> dict[str, Optional[_float]]:
         return {
             "x": self.double(),
             "y": self.double(),
             "z": self.double(),
         }
 
-    def quat(self) -> tuple[_float, _float, _float, _float]:
+    def quat(
+        self,
+    ) -> tuple[Optional[_float], Optional[_float], Optional[_float], Optional[_float]]:
         return (self.double(), self.double(), self.double(), self.double())
 
-    def quat_dict(self) -> dict[str, _float]:
+    def quat_dict(self) -> dict[str, Optional[_float]]:
         return {
             "x": self.double(),
             "y": self.double(),
@@ -509,7 +535,7 @@ class FArchiveReader:
             "w": self.double(),
         }
 
-    def ftransform(self) -> dict[str, dict[str, _float]]:
+    def ftransform(self) -> dict[str, dict[str, Optional[_float]]]:
         return {
             "rotation": self.quat_dict(),
             "translation": self.vector_dict(),
@@ -625,10 +651,14 @@ class FArchiveWriter:
     def u64(self, i: int):
         self.data.write(struct.pack("Q", i))
 
-    def float(self, i: float):
+    def float(self, i: Optional[float]):
+        if i is None:
+            i = float("nan")
         self.data.write(struct.pack("f", i))
 
-    def double(self, i: _float):
+    def double(self, i: Optional[_float]):
+        if i is None:
+            i = float("nan")
         self.data.write(struct.pack("d", i))
 
     def byte(self, b: int):
@@ -902,29 +932,35 @@ class FArchiveWriter:
             self.double(y)
             self.double(z)
 
-    def vector(self, x: _float, y: _float, z: _float):
+    def vector(self, x: Optional[_float], y: Optional[_float], z: Optional[_float]):
         self.double(x)
         self.double(y)
         self.double(z)
 
-    def vector_dict(self, value: dict[str, _float]):
+    def vector_dict(self, value: dict[str, Optional[_float]]):
         self.double(value["x"])
         self.double(value["y"])
         self.double(value["z"])
 
-    def quat(self, x: _float, y: _float, z: _float, w: _float):
+    def quat(
+        self,
+        x: Optional[_float],
+        y: Optional[_float],
+        z: Optional[_float],
+        w: Optional[_float],
+    ):
         self.double(x)
         self.double(y)
         self.double(z)
         self.double(w)
 
-    def quat_dict(self, value: dict[str, _float]):
+    def quat_dict(self, value: dict[str, Optional[_float]]):
         self.double(value["x"])
         self.double(value["y"])
         self.double(value["z"])
         self.double(value["w"])
 
-    def ftransform(self, value: dict[str, dict[str, _float]]):
+    def ftransform(self, value: dict[str, dict[str, Optional[_float]]]):
         self.quat_dict(value["rotation"])
         self.vector_dict(value["translation"])
         self.vector_dict(value["scale3d"])

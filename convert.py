@@ -37,6 +37,11 @@ def main():
         action="store_true",
         help="Force overwriting output file if it already exists without prompting",
     )
+    parser.add_argument(
+        "--convert-nan-to-null",
+        action="store_true",
+        help="Convert NaN/Inf/-Inf floats to null when converting from SAV to JSON. This will lose information in the event Inf/-Inf is in the sav file (default: false)",
+    )
     parser.add_argument("--minify-json", action="store_true", help="Minify JSON output")
     args = parser.parse_args()
 
@@ -56,17 +61,25 @@ def main():
             output_path = args.filename + ".json"
         else:
             output_path = args.output
-        convert_sav_to_json(args.filename, output_path, args.force, args.minify_json)
+        convert_sav_to_json(
+            args.filename,
+            output_path,
+            force=args.force,
+            minify=args.minify_json,
+            allow_nan=(not args.convert_nan_to_null),
+        )
 
     if args.from_json or args.filename.endswith(".json"):
         if not args.output:
             output_path = args.filename.replace(".json", "")
         else:
             output_path = args.output
-        convert_json_to_sav(args.filename, output_path, args.force)
+        convert_json_to_sav(args.filename, output_path, force=args.force)
 
 
-def convert_sav_to_json(filename, output_path, force=False, minify=False):
+def convert_sav_to_json(
+    filename, output_path, force=False, minify=False, allow_nan=True
+):
     print(f"Converting {filename} to JSON, saving to {output_path}")
     if os.path.exists(output_path):
         print(f"{output_path} already exists, this will overwrite the file")
@@ -78,11 +91,15 @@ def convert_sav_to_json(filename, output_path, force=False, minify=False):
         data = f.read()
         raw_gvas, _ = decompress_sav_to_gvas(data)
     print(f"Loading GVAS file")
-    gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
+    gvas_file = GvasFile.read(
+        raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES, allow_nan=allow_nan
+    )
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:
         indent = None if minify else "\t"
-        json.dump(gvas_file.dump(), f, indent=indent, cls=CustomEncoder)
+        json.dump(
+            gvas_file.dump(), f, indent=indent, cls=CustomEncoder, allow_nan=allow_nan
+        )
 
 
 def convert_json_to_sav(filename, output_path, force=False):

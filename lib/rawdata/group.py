@@ -14,12 +14,16 @@ def decode(
     for group in group_map:
         group_type = group["value"]["GroupType"]["value"]["value"]
         group_bytes = group["value"]["RawData"]["value"]["values"]
-        group["value"]["RawData"]["value"] = decode_bytes(group_bytes, group_type)
+        group["value"]["RawData"]["value"] = decode_bytes(
+            reader, group_bytes, group_type
+        )
     return value
 
 
-def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(group_bytes), debug=False)
+def decode_bytes(
+    parent_reader: FArchiveReader, group_bytes: Sequence[int], group_type: str
+) -> dict[str, Any]:
+    reader = parent_reader.internal_copy(bytes(group_bytes), debug=False)
     group_data = {
         "group_type": group_type,
         "group_id": reader.guid(),

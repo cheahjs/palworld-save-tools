@@ -118,9 +118,15 @@ class GvasFile:
         data: bytes,
         type_hints: dict[str, str] = {},
         custom_properties: dict[str, tuple[Callable, Callable]] = {},
+        allow_nan: bool = True,
     ) -> "GvasFile":
         gvas_file = GvasFile()
-        with FArchiveReader(data, type_hints, custom_properties) as reader:
+        with FArchiveReader(
+            data,
+            type_hints=type_hints,
+            custom_properties=custom_properties,
+            allow_nan=allow_nan,
+        ) as reader:
             gvas_file.header = GvasHeader.read(reader)
             gvas_file.properties = reader.properties_until_end()
             gvas_file.trailer = reader.read_to_end()
