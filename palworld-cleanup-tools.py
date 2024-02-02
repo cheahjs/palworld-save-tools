@@ -137,10 +137,20 @@ def RenamePlayer(player_uid, new_name):
         if str(item['key']['PlayerUId']['value']) == player_uid:
             player = item['value']['RawData']['value']['object']['SaveParameter']['value']
             print(
-                "\033[31mRename User\033[0m  UUID: %s  Level: %d  CharacterID: \033[93m%s\033[0m -> %s" % (
+                "\033[32mRename User\033[0m  UUID: %s  Level: %d  CharacterID: \033[93m%s\033[0m -> %s" % (
                     str(item['key']['InstanceId']['value']), player['Level']['value'],
                     player['NickName']['value'], new_name))
             player['NickName']['value'] = new_name
+    for group_data in wsd['GroupSaveDataMap']['value']:
+        if str(group_data['value']['GroupType']['value']['value']) == "EPalGroupType::Guild":
+            item = group_data['value']['RawData']['value']
+            for g_player in item['players']:
+                if str(g_player['player_uid']) == player_uid:
+                    print(
+                        "\033[32mRename Guild User\033[0m  \033[93m%s\033[0m  -> %s" % (
+                            g_player['player_info']['player_name'], new_name))
+                    g_player['player_info']['player_name'] = new_name
+                    break
 
 
 def OpenBackup(filename):
@@ -290,6 +300,7 @@ def CopyPlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
                         "\033[32mCopy User to Guild\033[0m  \033[93m%s\033[0m   [\033[92m%s\033[0m] Last Online: %d" % (
                             g_player['player_info']['player_name'], str(g_player['player_uid']),
                             g_player['player_info']['last_online_real_time']))
+                    copy_user_params['value']['RawData']['value']['group_id'] = group_data['value']['RawData']['value']['group_id']
                     break
     if player_group is None:
         for group_data in old_wsd['GroupSaveDataMap']['value']:
@@ -308,6 +319,8 @@ def CopyPlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
                                 "\033[32mCopy Guild\033[0m  \033[93m%s\033[0m   [\033[92m%s\033[0m] Last Online: %d" % (
                                     g_player['player_info']['player_name'], str(g_player['player_uid']),
                                     g_player['player_info']['last_online_real_time']))
+                            copy_user_params['value']['RawData']['value']['group_id'] = \
+                            group_data['value']['RawData']['value']['group_id']
                             player_group = copy.deepcopy(group_data)
                             wsd['GroupSaveDataMap']['value'].append(player_group)
                             n_item = player_group['value']['RawData']['value']
@@ -322,6 +335,8 @@ def CopyPlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
                                 "\033[32mCopy User from Guild\033[0m  \033[93m%s\033[0m   [\033[92m%s\033[0m] Last Online: %d" % (
                                 g_player['player_info']['player_name'], str(g_player['player_uid']),
                                 g_player['player_info']['last_online_real_time']))
+                            copy_user_params['value']['RawData']['value']['group_id'] = \
+                            group_data['value']['RawData']['value']['group_id']
                             n_item = player_group['value']['RawData']['value']
                             is_player_found = False
                             for n_player_info in n_item['players']:
