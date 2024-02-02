@@ -121,7 +121,12 @@ class GvasFile:
         allow_nan: bool = True,
     ) -> "GvasFile":
         gvas_file = GvasFile()
-        with FArchiveReader(data, type_hints, custom_properties, allow_nan) as reader:
+        with FArchiveReader(
+            data,
+            type_hints=type_hints,
+            custom_properties=custom_properties,
+            allow_nan=allow_nan,
+        ) as reader:
             gvas_file.header = GvasHeader.read(reader)
             gvas_file.properties = reader.properties_until_end()
             gvas_file.trailer = reader.read_to_end()

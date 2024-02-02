@@ -32,17 +32,19 @@ def decode(
     for work_element in value["value"]["values"]:
         work_bytes = work_element["RawData"]["value"]["values"]
         work_type = work_element["WorkableType"]["value"]["value"]
-        work_element["RawData"]["value"] = decode_bytes(work_bytes, work_type)
+        work_element["RawData"]["value"] = decode_bytes(reader, work_bytes, work_type)
         for work_assign in work_element["WorkAssignMap"]["value"]:
             work_assign_bytes = work_assign["value"]["RawData"]["value"]["values"]
             work_assign["value"]["RawData"]["value"] = decode_work_assign_bytes(
-                work_assign_bytes
+                reader, work_assign_bytes
             )
     return value
 
 
-def decode_bytes(b_bytes: Sequence[int], work_type: str) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(b_bytes), debug=False)
+def decode_bytes(
+    parent_reader: FArchiveReader, b_bytes: Sequence[int], work_type: str
+) -> dict[str, Any]:
+    reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
     data: dict[str, Any] = {}
     # Handle base serialization
     if work_type in WORK_BASE_TYPES:
@@ -127,8 +129,10 @@ def decode_bytes(b_bytes: Sequence[int], work_type: str) -> dict[str, Any]:
     return data
 
 
-def decode_work_assign_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(b_bytes), debug=False)
+def decode_work_assign_bytes(
+    parent_reader: FArchiveReader, b_bytes: Sequence[int]
+) -> dict[str, Any]:
+    reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
     data: dict[str, Any] = {}
 
     data["id"] = reader.guid()

@@ -10,7 +10,7 @@ def decode(
         raise Exception(f"Expected ArrayProperty, got {type_name}")
     value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
-    value["value"] = decode_bytes(data_bytes)
+    value["value"] = decode_bytes(reader, data_bytes)
     return value
 
 
@@ -26,10 +26,12 @@ def connect_info_item_writer(writer: FArchiveWriter, properties: dict[str, Any])
     writer.byte(properties["index"])
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
+def decode_bytes(
+    parent_reader: FArchiveReader, c_bytes: Sequence[int]
+) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
-    reader = FArchiveReader(bytes(c_bytes), debug=False)
+    reader = parent_reader.internal_copy(bytes(c_bytes), debug=False)
     data: dict[str, Any] = {
         "supported_level": reader.i32(),
         "connect": {

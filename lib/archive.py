@@ -124,6 +124,15 @@ class FArchiveReader:
     def __exit__(self, type, value, traceback):
         self.data.close()
 
+    def internal_copy(self, data, debug: bool) -> "FArchiveReader":
+        return FArchiveReader(
+            data,
+            self.type_hints,
+            self.custom_properties,
+            debug=debug,
+            allow_nan=self.allow_nan,
+        )
+
     def get_type_or(self, path: str, default: str):
         if path in self.type_hints:
             return self.type_hints[path]

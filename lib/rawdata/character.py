@@ -10,12 +10,14 @@ def decode(
         raise Exception(f"Expected ArrayProperty, got {type_name}")
     value = reader.property(type_name, size, path, nested_caller_path=path)
     char_bytes = value["value"]["values"]
-    value["value"] = decode_bytes(char_bytes)
+    value["value"] = decode_bytes(reader, char_bytes)
     return value
 
 
-def decode_bytes(char_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(char_bytes), debug=False)
+def decode_bytes(
+    parent_reader: FArchiveReader, char_bytes: Sequence[int]
+) -> dict[str, Any]:
+    reader = parent_reader.internal_copy(bytes(char_bytes), debug=False)
     char_data = {
         "object": reader.properties_until_end(),
         "unknown_bytes": reader.byte_list(4),
