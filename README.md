@@ -68,31 +68,30 @@ Additional command line arguments:
 
 This tools is for cleanup the unreference item, rename the player name, migrate player and delete the player.
 
-For cleaning the character and the guild, use the follow command `python palworld-cleanup-tools.py --fix-missing --fix-capture Level.sav`
+- For cleaning the capture log in guild, use the follow command `python palworld-cleanup-tools.py --fix-missing --fix-capture Level.sav`
 
-For modifiy the `Level.sav` file, use the follow command
+- For modifiy the `Level.sav` file, use the follow command
 `python -i palworld-cleanup-tools.py Level.sav`
 
-The tools have the following commands in interactive mode:
-
-1. `ShowPlayers()`: List the Players
-1. `FixMissing()`: Remove missing player instance
-1. `ShowGuild(fix_capture=False)`: List the Guild and members
-1. `RenamePlayer(uid,new_name)`: Rename player to new_name
-1. `DeletePlayer(uid,InstanceId=None, dry_run=False)`: Wipe player data from save InstanceId: delete specified InstanceId
-1. `EditPlayer(uid)`: Allocate player base meta data to variable 'player'
-1. `OpenBackup(filename)`: Open Backup Level.sav file and assign to backup_wsd
-1. `MigratePlayer(old_uid,new_uid)`: Migrate the player from old PlayerUId to new PlayerUId
-1. `CopyPlayer(old_uid,new_uid, backup_wsd)`: Copy the player from old PlayerUId to new PlayerUId
-1. `Save()`: Save the file and exit
+	- `ShowPlayers()` - List the Players
+	- `FixMissing()` - Remove missing player instance
+	- `ShowGuild(fix_capture=False)` - List the Guild and members
+	- `RenamePlayer(uid,new_name)` - Rename player to new_name
+	- `DeletePlayer(uid,InstanceId=None, dry_run=False)` - Wipe player data from save InstanceId: delete specified InstanceId
+	- `EditPlayer(uid)` - Allocate player base meta data to variable `player`
+	- `OpenBackup(filename)` - Open Backup Level.sav file and assign to backup_wsd
+	- `MigratePlayer(old_uid,new_uid)` - Migrate the player from old PlayerUId to new PlayerUId
+	- `CopyPlayer(old_uid,new_uid, backup_wsd)` - Copy the player from old PlayerUId to new PlayerUId `backup_wsd is the OpenBackup file, wsd is current file`
+	- `Save()` - Save the file and exit
 
 Migrate difference server to single server sample:
 
 1. The player login to the new server to create player instance for new server, and then stop the server
-1. Copy old server Level.sav to `SaveGames/0/<Server ID>/Old-Level.sav`
+1. Copy old server `Level.sav` to `SaveGames/0/<Server ID>/Old-Level.sav`
 1. Copy old server `Players/xxxxxxxx-0000-0000-0000-000000000000.sav` to `SaveGames/0/<Server ID>/Players/xxxxxxxx-0000-0000-0000-000000000001.sav`
 1. Use interactive mode `python -i palworld-cleanup-tools.py Level.sav`
 1. Use following command `OpenBackup("Old-Level.sav")`
 1. Next step `CopyPlayer("xxxxxxxx-0000-0000-0000-000000000001", "xxxxxxxx-0000-0000-0000-000000000000", backup_wsd)` for every require to migrate player
 1. Next step `Save()`
-1. And remove all the old -000000000001.sav, rename `Level_fixed.sav` to `Level.sav` and start the Palworld Server.
+1. And remove all the old `-000000000001.sav`, rename `Level_fixed.sav` to `Level.sav` and start the Palworld Server.
+
