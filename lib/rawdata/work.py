@@ -51,8 +51,8 @@ def decode_bytes(b_bytes: Sequence[int], work_type: str) -> dict[str, Any]:
             "location": reader.vector_dict(),
             "rotation": reader.quat_dict(),
             "box_sphere_bounds": {
-                "origin": reader.vector_dict,
-                "box_extent": reader.vector_dict,
+                "origin": reader.vector_dict(),
+                "box_extent": reader.vector_dict(),
                 "sphere_radius": reader.double(),
             },
         }
