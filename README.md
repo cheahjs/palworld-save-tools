@@ -95,4 +95,4 @@ Migrate difference server to single server sample:
 1. Use following command `OpenBackup("Old-Level.sav")`
 1. Next step `CopyPlayer("xxxxxxxx-0000-0000-0000-000000000001", "xxxxxxxx-0000-0000-0000-000000000000", backup_wsd)` for every require to migrate player
 1. Next step `Save()`
-1. And remove all the old -000000000001.sav, and start the Palworld Server.
+1. And remove all the old -000000000001.sav, rename `Level_fixed.sav` to `Level.sav` and start the Palworld Server.
