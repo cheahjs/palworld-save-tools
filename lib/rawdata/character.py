@@ -16,10 +16,11 @@ def decode(
 
 def decode_bytes(char_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(char_bytes), debug=False)
-    char_data = {}
-    char_data["object"] = reader.properties_until_end()
-    char_data["unknown_bytes"] = reader.byte_list(4)
-    char_data["group_id"] = reader.guid()
+    char_data = {
+        "object": reader.properties_until_end(),
+        "unknown_bytes": reader.byte_list(4),
+        "group_id": reader.guid(),
+    }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return char_data

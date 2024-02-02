@@ -68,7 +68,7 @@ def module_passive_effect_reader(reader: FArchiveReader) -> dict[str, Any]:
 
 def decode_bytes(b_bytes: Sequence[int], module_type: str) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes), debug=False)
-    data = {}
+    data: dict[str, Any] = {}
     if module_type in NO_OP_TYPES:
         pass
     elif module_type == "EPalBaseCampModuleType::TransportItemDirector":
@@ -77,25 +77,26 @@ def decode_bytes(b_bytes: Sequence[int], module_type: str) -> dict[str, Any]:
                 transport_item_character_info_reader
             )
         except Exception as e:
-            reader.data.seek(0)
             print(
-                f"Warning: Failed to decode transport item director, please report this: {e} ({reader.bytes()})"
+                f"Warning: Failed to decode transport item director, please report this: {e} ({bytes(b_bytes)!r})"
             )
-            data = {"values": b_bytes}
+            return {"values": b_bytes}
     elif module_type == "EPalBaseCampModuleType::PassiveEffect":
         try:
             data["passive_effects"] = reader.tarray(module_passive_effect_reader)
         except Exception as e:
             reader.data.seek(0)
             print(
-                f"Warning: Failed to decode passive effect, please report this: {e} ({reader.bytes()})"
+                f"Warning: Failed to decode passive effect, please report this: {e} ({bytes(b_bytes)!r})"
             )
-            data = {"values": b_bytes}
+            return {"values": b_bytes}
     else:
         print(f"Warning: Unknown base camp module type {module_type}, skipping")
-        data["values"] = [b for b in reader.bytes()]
+        return {"values": b_bytes}
+
     if not reader.eof():
-        raise Exception("Warning: EOF not reached")
+        raise Exception(f"Warning: EOF not reached for {module_type}")
+
     return data
 
 

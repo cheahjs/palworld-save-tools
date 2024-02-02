@@ -43,7 +43,7 @@ def decode(
 
 def decode_bytes(b_bytes: Sequence[int], work_type: str) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes), debug=False)
-    data = {}
+    data: dict[str, Any] = {}
     # Handle base serialization
     if work_type in WORK_BASE_TYPES:
         data["id"] = reader.guid()
@@ -121,7 +121,7 @@ def decode_bytes(b_bytes: Sequence[int], work_type: str) -> dict[str, Any]:
 
     if not reader.eof():
         raise Exception(
-            f"Warning: EOF not reached for {work_type}, remaining bytes: {reader.read_to_end()}"
+            f"Warning: EOF not reached for {work_type}, remaining bytes: {reader.read_to_end()!r}"
         )
 
     return data
@@ -129,7 +129,7 @@ def decode_bytes(b_bytes: Sequence[int], work_type: str) -> dict[str, Any]:
 
 def decode_work_assign_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes), debug=False)
-    data = {}
+    data: dict[str, Any] = {}
 
     data["id"] = reader.guid()
     data["location_index"] = reader.i32()
@@ -191,7 +191,8 @@ def encode_bytes(p: dict[str, Any], work_type: str) -> bytes:
             lambda w, l: (
                 w.vector_dict(l["location"]),
                 w.vector_dict(l["facing_direction"]),
-            ),
+                None,
+            )[2],
             p["assign_locations"],
         )
         writer.byte(p["behaviour_type"])
@@ -243,7 +244,7 @@ def encode_bytes(p: dict[str, Any], work_type: str) -> bytes:
         print(
             f"Unknown EPalWorkTransformType, please report this: {transform_type}: {work_type}"
         )
-        writer.bytes(p["transform"]["raw_data"])
+        writer.write(p["transform"]["raw_data"])
 
     encoded_bytes = writer.bytes()
     return encoded_bytes

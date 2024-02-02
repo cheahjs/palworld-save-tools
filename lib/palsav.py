@@ -19,7 +19,7 @@ def decompress_sav_to_gvas(data: bytes) -> tuple[bytes, int]:
                 f"not a compressed Palworld save, found too many null bytes, this is likely corrupted"
             )
         raise Exception(
-            f"not a compressed Palworld save, found {magic_bytes} instead of {MAGIC_BYTES}"
+            f"not a compressed Palworld save, found {magic_bytes!r} instead of {MAGIC_BYTES!r}"
         )
     # Valid save types
     if save_type not in [0x30, 0x31, 0x32]:

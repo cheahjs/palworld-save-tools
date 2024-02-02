@@ -16,15 +16,16 @@ def decode(
 
 def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes), debug=False)
-    data = {}
-    data["id"] = reader.guid()
-    data["name"] = reader.fstring()
-    data["state"] = reader.byte()
-    data["transform"] = reader.ftransform()
-    data["area_range"] = reader.float()
-    data["group_id_belong_to"] = reader.guid()
-    data["fast_travel_local_transform"] = reader.ftransform()
-    data["owner_map_object_instance_id"] = reader.guid()
+    data = {
+        "id": reader.guid(),
+        "name": reader.fstring(),
+        "state": reader.byte(),
+        "transform": reader.ftransform(),
+        "area_range": reader.float(),
+        "group_id_belong_to": reader.guid(),
+        "fast_travel_local_transform": reader.ftransform(),
+        "owner_map_object_instance_id": reader.guid(),
+    }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

@@ -16,9 +16,10 @@ def decode(
 
 def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes), debug=False)
-    data = {}
-    data["state"] = reader.byte()
-    data["id"] = reader.guid()
+    data = {
+        "state": reader.byte(),
+        "id": reader.guid(),
+    }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
