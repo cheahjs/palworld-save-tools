@@ -14,11 +14,11 @@ def decode(
     return value
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
+def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
     reader = FArchiveReader(bytes(c_bytes), debug=False)
-    data = {}
+    data: dict[str, Any] = {}
     data["permission"] = {
         "type_a": reader.tarray(lambda r: r.byte()),
         "type_b": reader.tarray(lambda r: r.byte()),
@@ -47,7 +47,9 @@ def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
     writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_a"])
     writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_b"])
-    writer.tarray(lambda w, d: w.fstring(d), p["permission"]["item_static_ids"])
+    writer.tarray(
+        lambda w, d: (w.fstring(d), None)[1], p["permission"]["item_static_ids"]
+    )
     writer.float(p["corruption_progress_value"])
     encoded_bytes = writer.bytes()
     return encoded_bytes

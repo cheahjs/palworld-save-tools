@@ -16,7 +16,7 @@ def decode(
 
 def decode_bytes(m_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(m_bytes), debug=False)
-    data = {}
+    data: dict[str, Any] = {}
     data["instance_id"] = reader.guid()
     data["concrete_model_instance_id"] = reader.guid()
     data["base_camp_id_belong_to"] = reader.guid()

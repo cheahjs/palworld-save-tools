@@ -16,7 +16,7 @@ def decode(
 
 def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
     reader = FArchiveReader(bytes(b_bytes), debug=False)
-    data = {}
+    data: dict[str, Any] = {}
     data["id"] = reader.guid()
     data["work_ids"] = reader.tarray(uuid_reader)
     if not reader.eof():

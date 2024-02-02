@@ -3,7 +3,6 @@ from typing import Any, Callable
 from lib.archive import FArchiveReader, FArchiveWriter
 from lib.rawdata import (
     base_camp,
-    base_camp_module,
     build_process,
     character,
     character_container,

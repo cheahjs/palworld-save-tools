@@ -2,7 +2,11 @@ import io
 import os
 import struct
 import uuid
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Sequence, Union
+
+# Alias stdlib types to avoid name conflicts
+_float = float
+_bytes = bytes
 
 
 class UUID:
@@ -10,12 +14,13 @@ class UUID:
 
     __slots__ = ("raw_bytes", "parsed_uuid")
     raw_bytes: bytes
-    parsed_uuid: uuid.UUID
+    parsed_uuid: Optional[uuid.UUID]
 
     def __init__(self, raw_bytes: bytes) -> None:
         self.raw_bytes = raw_bytes
         self.parsed_uuid = None
 
+    @staticmethod
     def from_str(s: str) -> "UUID":
         b = uuid.UUID(s).bytes
         return UUID(
@@ -67,6 +72,12 @@ class UUID:
 
     def __eq__(self, __value: object) -> bool:
         return str(self) == str(__value)
+
+
+# Specify a type for JSON-serializable objects
+JSON = Union[
+    None, bool, int, float, str, list["JSON"], dict[str, "JSON"], UUID, uuid.UUID
+]
 
 
 def instance_id_reader(reader: "FArchiveReader") -> dict[str, UUID]:
@@ -132,7 +143,7 @@ class FArchiveReader:
     def fstring(self) -> str:
         # in the hot loop, avoid function calls
         reader = self.data
-        (size,) = self.unpack_i32(reader.read(4))
+        (size,) = FArchiveReader.unpack_i32(reader.read(4))
 
         if size == 0:
             return ""
@@ -153,60 +164,60 @@ class FArchiveReader:
             try:
                 escaped = data.decode(encoding, errors="surrogatepass")
                 print(
-                    f"Error decoding {encoding} string of length {size}, data loss may occur! {bytes(data)}"
+                    f"Error decoding {encoding} string of length {size}, data loss may occur! {bytes(data)!r}"
                 )
                 return escaped
             except Exception as e:
                 raise Exception(
-                    f"Error decoding {encoding} string of length {size}: {bytes(data)}"
+                    f"Error decoding {encoding} string of length {size}: {bytes(data)!r}"
                 ) from e
 
     unpack_i16 = struct.Struct("h").unpack
 
     def i16(self) -> int:
-        return self.unpack_i16(self.data.read(2))[0]
+        return FArchiveReader.unpack_i16(self.data.read(2))[0]
 
     unpack_u16 = struct.Struct("H").unpack
 
     def u16(self) -> int:
-        return self.unpack_u16(self.data.read(2))[0]
+        return FArchiveReader.unpack_u16(self.data.read(2))[0]
 
     unpack_i32 = struct.Struct("i").unpack
 
     def i32(self) -> int:
-        return self.unpack_i32(self.data.read(4))[0]
+        return FArchiveReader.unpack_i32(self.data.read(4))[0]
 
     unpack_u32 = struct.Struct("I").unpack
 
     def u32(self) -> int:
-        return self.unpack_u32(self.data.read(4))[0]
+        return FArchiveReader.unpack_u32(self.data.read(4))[0]
 
     unpack_i64 = struct.Struct("q").unpack
 
     def i64(self) -> int:
-        return self.unpack_i64(self.data.read(8))[0]
+        return FArchiveReader.unpack_i64(self.data.read(8))[0]
 
     unpack_u64 = struct.Struct("Q").unpack
 
     def u64(self) -> int:
-        return self.unpack_u64(self.data.read(8))[0]
+        return FArchiveReader.unpack_u64(self.data.read(8))[0]
 
     unpack_float = struct.Struct("f").unpack
 
-    def float(self) -> float:
-        return self.unpack_float(self.data.read(4))[0]
+    def float(self) -> _float:
+        return FArchiveReader.unpack_float(self.data.read(4))[0]
 
     unpack_double = struct.Struct("d").unpack
 
-    def double(self) -> float:
-        return self.unpack_double(self.data.read(8))[0]
+    def double(self) -> _float:
+        return FArchiveReader.unpack_double(self.data.read(8))[0]
 
     unpack_byte = struct.Struct("B").unpack
 
     def byte(self) -> int:
-        return self.unpack_byte(self.data.read(1))[0]
+        return FArchiveReader.unpack_byte(self.data.read(1))[0]
 
-    def byte_list(self, size: int) -> list[int]:
+    def byte_list(self, size: int) -> Sequence[int]:
         return struct.unpack(str(size) + "B", self.data.read(size))
 
     def skip(self, size: int) -> None:
@@ -222,9 +233,7 @@ class FArchiveReader:
             return UUID(self.data.read(16))
         return None
 
-    def tarray(
-        self, type_reader: Callable[["FArchiveReader"], dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    def tarray(self, type_reader: Callable[["FArchiveReader"], Any]) -> list[Any]:
         count = self.u32()
         array = []
         for _ in range(count):
@@ -312,7 +321,6 @@ class FArchiveReader:
             _id = self.optional_guid()
             self.u32()
             count = self.u32()
-            values = {}
             key_path = path + ".Key"
             if key_type == "StructProperty":
                 key_struct_type = self.get_type_or(key_path, "Guid")
@@ -323,7 +331,7 @@ class FArchiveReader:
                 value_struct_type = self.get_type_or(value_path, "StructProperty")
             else:
                 value_struct_type = None
-            values = []
+            values: list[dict[str, Any]] = []
             for _ in range(count):
                 key = self.prop_value(key_type, key_struct_type, key_path)
                 value = self.prop_value(value_type, value_struct_type, value_path)
@@ -441,14 +449,14 @@ class FArchiveReader:
 
         return values
 
-    def compressed_short_rotator(self) -> tuple[float, float, float]:
+    def compressed_short_rotator(self) -> tuple[_float, _float, _float]:
         short_pitch = self.u16() if self.bool() else 0
         short_yaw = self.u16() if self.bool() else 0
         short_roll = self.u16() if self.bool() else 0
         pitch = short_pitch * (360.0 / 65536.0)
         yaw = short_yaw * (360.0 / 65536.0)
         roll = short_roll * (360.0 / 65536.0)
-        return [pitch, yaw, roll]
+        return (pitch, yaw, roll)
 
     def serializeint(self, component_bit_count: int) -> int:
         b = bytearray(self.read((component_bit_count + 7) // 8))
@@ -457,7 +465,7 @@ class FArchiveReader:
         value = int.from_bytes(b, "little")
         return value
 
-    def packed_vector(self, scale_factor: int) -> tuple[float, float, float]:
+    def packed_vector(self, scale_factor: int) -> tuple[_float, _float, _float]:
         component_bit_count_and_extra_info = self.u32()
         component_bit_count = component_bit_count_and_extra_info & 63
         extra_info = component_bit_count_and_extra_info >> 6
@@ -471,34 +479,29 @@ class FArchiveReader:
             z = (z & (sign_bit - 1)) - (z & sign_bit)
 
             if extra_info:
-                x /= scale_factor
-                y /= scale_factor
-                z /= scale_factor
+                return (x / scale_factor, y / scale_factor, z / scale_factor)
             return (x, y, z)
         else:
             received_scaler_type_size = 8 if extra_info else 4
             if received_scaler_type_size == 8:
                 return self.vector()
             else:
-                x = self.float()
-                y = self.float()
-                z = self.float()
-                return (x, y, z)
+                return (self.float(), self.float(), self.float())
 
-    def vector(self) -> tuple[float, float, float]:
+    def vector(self) -> tuple[_float, _float, _float]:
         return (self.double(), self.double(), self.double())
 
-    def vector_dict(self) -> dict[str, float]:
+    def vector_dict(self) -> dict[str, _float]:
         return {
             "x": self.double(),
             "y": self.double(),
             "z": self.double(),
         }
 
-    def quat(self) -> tuple[float, float, float, float]:
+    def quat(self) -> tuple[_float, _float, _float, _float]:
         return (self.double(), self.double(), self.double(), self.double())
 
-    def quat_dict(self) -> dict[str, float]:
+    def quat_dict(self) -> dict[str, _float]:
         return {
             "x": self.double(),
             "y": self.double(),
@@ -506,7 +509,7 @@ class FArchiveReader:
             "w": self.double(),
         }
 
-    def ftransform(self) -> dict[str, dict[str, float]]:
+    def ftransform(self) -> dict[str, dict[str, _float]]:
         return {
             "rotation": self.quat_dict(),
             "translation": self.vector_dict(),
@@ -581,7 +584,7 @@ class FArchiveWriter:
         self.data.seek(pos)
         return b
 
-    def write(self, data: bytes):
+    def write(self, data: _bytes):
         self.data.write(data)
 
     def bool(self, bool: bool):
@@ -625,7 +628,7 @@ class FArchiveWriter:
     def float(self, i: float):
         self.data.write(struct.pack("f", i))
 
-    def double(self, i: float):
+    def double(self, i: _float):
         self.data.write(struct.pack("d", i))
 
     def byte(self, b: int):
@@ -645,7 +648,7 @@ class FArchiveWriter:
             uuid_writer(self, u)
 
     def tarray(
-        self, type_writer: Callable[["FArchiveWriter", dict[str, Any]], None], array
+        self, type_writer: Callable[["FArchiveWriter", Any], None], array: list[Any]
     ):
         self.u32(len(array))
         for i in range(len(array)):
@@ -822,7 +825,7 @@ class FArchiveWriter:
             else:
                 raise Exception(f"Unknown array type: {array_type}")
 
-    def compressed_short_rotator(self, pitch: float, yaw: float, roll: float):
+    def compressed_short_rotator(self, pitch: _float, yaw: _float, roll: _float):
         short_pitch = round(pitch * (65536.0 / 360.0)) & 0xFFFF
         short_yaw = round(yaw * (65536.0 / 360.0)) & 0xFFFF
         short_roll = round(roll * (65536.0 / 360.0)) & 0xFFFF
@@ -843,7 +846,7 @@ class FArchiveWriter:
             self.bool(False)
 
     @staticmethod
-    def unreal_round_float_to_int(value: float) -> int:
+    def unreal_round_float_to_int(value: _float) -> int:
         return int(value)
 
     @staticmethod
@@ -860,7 +863,7 @@ class FArchiveWriter:
             int.to_bytes(value, (component_bit_count + 7) // 8, "little", signed=True)
         )
 
-    def packed_vector(self, scale_factor: int, x: float, y: float, z: float):
+    def packed_vector(self, scale_factor: int, x: _float, y: _float, z: _float):
         max_exponent_for_scaling = 52
         max_value_to_scale = 1 << max_exponent_for_scaling
         max_exponent_after_scaling = 62
@@ -899,29 +902,29 @@ class FArchiveWriter:
             self.double(y)
             self.double(z)
 
-    def vector(self, x: float, y: float, z: float):
+    def vector(self, x: _float, y: _float, z: _float):
         self.double(x)
         self.double(y)
         self.double(z)
 
-    def vector_dict(self, value: dict[str, float]):
+    def vector_dict(self, value: dict[str, _float]):
         self.double(value["x"])
         self.double(value["y"])
         self.double(value["z"])
 
-    def quat(self, x: float, y: float, z: float, w: float):
+    def quat(self, x: _float, y: _float, z: _float, w: _float):
         self.double(x)
         self.double(y)
         self.double(z)
         self.double(w)
 
-    def quat_dict(self, value: dict[str, float]):
+    def quat_dict(self, value: dict[str, _float]):
         self.double(value["x"])
         self.double(value["y"])
         self.double(value["z"])
         self.double(value["w"])
 
-    def ftransform(self, value: dict[str, dict[str, float]]):
+    def ftransform(self, value: dict[str, dict[str, _float]]):
         self.quat_dict(value["rotation"])
         self.vector_dict(value["translation"])
         self.vector_dict(value["scale3d"])

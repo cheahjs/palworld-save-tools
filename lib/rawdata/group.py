@@ -37,7 +37,7 @@ def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
         }
         group_data |= org
     if group_type in ["EPalGroupType::Guild", "EPalGroupType::IndependentGuild"]:
-        guild = {
+        guild: dict[str, Any] = {
             "base_camp_level": reader.i32(),
             "map_object_instance_ids_base_camp_points": reader.tarray(uuid_reader),
             "guild_name": reader.fstring(),
@@ -54,7 +54,10 @@ def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
         }
         group_data |= indie
     if group_type == "EPalGroupType::Guild":
-        guild = {"admin_player_uid": reader.guid(), "players": []}
+        guild = {
+            "admin_player_uid": reader.guid(),
+            "players": [],
+        }
         player_count = reader.i32()
         for _ in range(player_count):
             player = {

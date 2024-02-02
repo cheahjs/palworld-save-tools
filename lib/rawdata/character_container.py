@@ -14,14 +14,15 @@ def decode(
     return value
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
+def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
     reader = FArchiveReader(bytes(c_bytes), debug=False)
-    data = {}
-    data["player_uid"] = reader.guid()
-    data["instance_id"] = reader.guid()
-    data["permission_tribe_id"] = reader.byte()
+    data = {
+        "player_uid": reader.guid(),
+        "instance_id": reader.guid(),
+        "permission_tribe_id": reader.byte(),
+    }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
