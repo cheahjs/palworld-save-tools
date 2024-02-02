@@ -105,9 +105,14 @@ def main():
         print("                                               InstanceId: delete specified InstanceId")
         print("                                               dry_run: only show how to delete")
         print("  EditPlayer(uid)                            - Allocate player base meta data to variable 'player'")
-        print("  MovePlayer(old_uid,new_uid)                - Migrate the player from old PlayerUId to new PlayerUId")
         print("  OpenBackup(filename)                       - Open Backup Level.sav file and assign to backup_wsd")
-        print("  MigratePlayer(old_uid,new_uid, backup_wsd) - Migrate the player from old PlayerUId to new PlayerUId")
+        print("  MigratePlayer(old_uid,new_uid)             - Migrate the player from old PlayerUId to new PlayerUId")
+        print("                                               Note: the PlayerUId is use in the Sav file,")
+        print("                                               when use to fix broken save, you can rename the old ")
+        print("                                               player save to another UID and put in old_uid field.")
+        print("  CopyPlayer(old_uid,new_uid, backup_wsd)    - Copy the player from old PlayerUId to new PlayerUId ")
+        print("                                               Note: be sure you have already use the new playerUId to ")
+        print("                                               login the game.")
         print("  Save()                                     - Save the file and exit")
         print()
         print("Advance feature:")
@@ -155,7 +160,7 @@ def OpenBackup(filename):
 def to_storage_uuid(uuid_str):
     return UUID.from_str(str(uuid_str))
 
-def MigratePlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
+def CopyPlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
     player_sav_file = os.path.dirname(os.path.abspath(args.filename)) + "/Players/" + player_uid.upper().replace("-",
                                                                                                                  "") + ".sav"
     new_player_sav_file = os.path.dirname(
@@ -163,16 +168,21 @@ def MigratePlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
     playerInstanceId = None
     instances = []
     container_mapping = {}
-    if not os.path.exists(player_sav_file):
+    if not os.path.exists(player_sav_file) or not os.path.exists(new_player_sav_file):
         print("\033[33mWarning: Player Sav file Not exists: %s\033[0m" % player_sav_file)
         return
     else:
         with open(player_sav_file, "rb") as f:
             raw_gvas, _ = decompress_sav_to_gvas(f.read())
             player_gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
+        with open(new_player_sav_file, "rb") as f:
+            raw_gvas, _ = decompress_sav_to_gvas(f.read())
+            new_player_gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
+        new_player_gvas = new_player_gvas_file.properties['SaveData']['value']
         player_gvas = player_gvas_file.properties['SaveData']['value']
-        player_gvas['PlayerUId']['value'] = to_storage_uuid(uuid.UUID(new_player_uid))
-        player_gvas['IndividualId']['value']['InstanceId']['value'] = to_storage_uuid(uuid.uuid4())
+        player_gvas['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
+        player_gvas['IndividualId']['value']['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
+        player_gvas['IndividualId']['value']['InstanceId']['value'] = new_player_gvas['IndividualId']['value']['InstanceId']['value']
     # Clone Item from CharacterContainerSaveData
     for idx_key in ['OtomoCharacterContainerId', 'PalStorageContainerId']:
         for container in old_wsd['CharacterContainerSaveData']['value']:
@@ -340,12 +350,17 @@ def MigratePlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
             sav_file = compress_gvas_to_sav(player_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type)
             f.write(sav_file)
 
+# CopyPlayer("2364c188-0000-0000-0000-000000000000", "c23f41c0-0000-0000-0000-000000000000", wsd)
+# Save()
+# MigratePlayer("2364c188-0000-0000-0000-000000000000", "c23f41c0-0000-0000-0000-000000000000")
+# search_values(wsd, "2364c188-0000-0000-0000-000000000000")
+# search_values(wsd, "caebb327-4fec-74b0-1a5b-a186a652ab94")
 
-def MovePlayer(player_uid, new_player_uid):
+def MigratePlayer(player_uid, new_player_uid):
     player_sav_file = os.path.dirname(os.path.abspath(args.filename)) + "/Players/" + player_uid.upper().replace("-","") + ".sav"
     new_player_sav_file = os.path.dirname(os.path.abspath(args.filename)) + "/Players/" + new_player_uid.upper().replace("-","") + ".sav"
-    playerInstanceId = None
-    if not os.path.exists(player_sav_file):
+    DeletePlayer(new_player_uid)
+    if not os.path.exists(player_sav_file) or not os.path.exists(new_player_sav_file):
         print("\033[33mWarning: Player Sav file Not exists: %s\033[0m" % player_sav_file)
         return
     else:
@@ -353,29 +368,36 @@ def MovePlayer(player_uid, new_player_uid):
             raw_gvas, _ = decompress_sav_to_gvas(f.read())
             player_gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
         player_gvas = player_gvas_file.properties['SaveData']['value']
-        player_gvas['PlayerUId']['value'] = to_storage_uuid(uuid.UUID(new_player_uid))
         with open(new_player_sav_file, "rb") as f:
             raw_gvas, _ = decompress_sav_to_gvas(f.read())
             new_player_gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
-        new_player_gvas = player_gvas_file.properties['SaveData']['value']
-        new_player_gvas['OtomoCharacterContainerId']['value']['ID']['value'] = player_gvas['OtomoCharacterContainerId']['value']['ID']['value']
+        new_player_gvas = new_player_gvas_file.properties['SaveData']['value']
+        # Copy Instance ID From new player
+        player_uid = player_gvas['PlayerUId']['value']
+        player_gvas['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
+        player_gvas['IndividualId']['value']['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
+        player_gvas['IndividualId']['value']['InstanceId']['value'] = new_player_gvas['IndividualId']['value']['InstanceId']['value']
+        for idx_key in ['CommonContainerId', 'DropSlotContainerId', 'EssentialContainerId', 'FoodEquipContainerId',
+                        'PlayerEquipArmorContainerId', 'WeaponLoadOutContainerId']:
+           new_player_gvas['inventoryInfo']['value'][idx_key]['value']['ID']['value'] = player_gvas['inventoryInfo']['value'][idx_key]['value']['ID']['value']
         with open(new_player_sav_file, "wb") as f:
-            print("Saving new player sav %s" % (new_player_sav_file))
+            print("Saving new player sav %s" % new_player_sav_file)
             if "Pal.PalWorldSaveGame" in player_gvas_file.header.save_game_class_name or "Pal.PalLocalWorldSaveGame" in player_gvas_file.header.save_game_class_name:
                 save_type = 0x32
             else:
                 save_type = 0x31
-            sav_file = compress_gvas_to_sav(new_player_gvas.write(PALWORLD_CUSTOM_PROPERTIES), save_type)
+            sav_file = compress_gvas_to_sav(player_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type)
             f.write(sav_file)
     for item in wsd['CharacterSaveParameterMap']['value']:
         player = item['value']['RawData']['value']['object']['SaveParameter']['value']
-        if str(item['key']['PlayerUId']['value']) == player_uid:
-            item['key']['PlayerUId']['value'] = to_storage_uuid(uuid.UUID(new_player_uid))
+        if str(item['key']['PlayerUId']['value']) == str(player_uid):
+            item['key']['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
+            item['key']['InstanceId']['value'] = new_player_gvas['IndividualId']['value']['InstanceId']['value']
             print(
                 "\033[32mMigrate User\033[0m  UUID: %s  Level: %d  CharacterID: \033[93m%s\033[0m" % (
                     str(item['key']['InstanceId']['value']), player['Level']['value'] if 'Level' in player else -1,
                     player['NickName']['value']))
-        elif 'OwnerPlayerUId' in player and str(player['OwnerPlayerUId']['value']) == player_uid:
+        elif 'OwnerPlayerUId' in player and str(player['OwnerPlayerUId']['value']) == str(player_uid):
             player['OwnerPlayerUId']['value'] = to_storage_uuid(uuid.UUID(new_player_uid))
             player['OldOwnerPlayerUIds']['value']['values'].insert(0, to_storage_uuid(uuid.UUID(new_player_uid)))
             print(
@@ -386,20 +408,27 @@ def MovePlayer(player_uid, new_player_uid):
         if str(group_data['value']['GroupType']['value']['value']) == "EPalGroupType::Guild":
             item = group_data['value']['RawData']['value']
             for player in item['players']:
-                if str(player['player_uid']) == player_uid:
-                    player['player_uid'] = to_storage_uuid(uuid.UUID(new_player_uid))
+                if str(player['player_uid']) == str(player_uid):
+                    player['player_uid'] = new_player_gvas['PlayerUId']['value']
                     print(
                         "\033[32mMigrate User from Guild\033[0m  \033[93m%s\033[0m   [\033[92m%s\033[0m] Last Online: %d" % (
                             player['player_info']['player_name'], str(player['player_uid']),
                             player['player_info']['last_online_real_time']))
                     break
-            if str(item['admin_player_uid']) == player_uid:
-                item['admin_player_uid'] =  to_storage_uuid(uuid.UUID(new_player_uid))
+            if str(item['admin_player_uid']) == str(player_uid):
+                item['admin_player_uid'] =  new_player_gvas['PlayerUId']['value']
                 print("\033[32mMigrate Guild Admin \033[0m")
             for ind_char in item['individual_character_handle_ids']:
-                if str(ind_char['guid']) == player_uid:
-                    ind_char['guid'] = to_storage_uuid(uuid.UUID(new_player_uid))
+                if str(ind_char['guid']) == str(player_uid):
+                    ind_char['guid'] = new_player_gvas['PlayerUId']['value']
+                    ind_char['instance_id'] = new_player_gvas['IndividualId']['value']['InstanceId']['value']
                     print("\033[32mMigrate Guild Character %s\033[0m" % (str(ind_char['instance_id'])))
+    for map_data in wsd['MapObjectSaveData']['value']['values']:
+        if str(map_data['Model']['value']['RawData']['value']['build_player_uid']) == str(player_uid):
+            map_data['Model']['value']['RawData']['value']['build_player_uid'] = new_player_gvas['PlayerUId']['value']
+            print(
+                "\033[32mMigrate Building\033[0m  \033[93m%s\033[0m" % (
+                    str(map_data['MapObjectInstanceId']['value'])))
     print("Finish to migrate player from Save, please delete this file manually: %s" % player_sav_file)
 
 def DeletePlayer(player_uid, InstanceId = None, dry_run=False):
@@ -492,17 +521,23 @@ def DeletePlayer(player_uid, InstanceId = None, dry_run=False):
         for item in remove_items:
             wsd['CharacterSaveParameterMap']['value'].remove(item)
     # Remove Item from GroupSaveDataMap
+    remove_guilds = []
     for group_data in wsd['GroupSaveDataMap']['value']:
         if str(group_data['value']['GroupType']['value']['value']) == "EPalGroupType::Guild":
             item = group_data['value']['RawData']['value']
             for player in item['players']:
                 if str(player['player_uid']) == player_uid and InstanceId is None:
                     print(
-                        "\033[31mDelete User from Guild\033[0m  \033[93m%s\033[0m   [\033[92m%s\033[0m] Last Online: %d" % (
-                            player['player_info']['player_name'], str(player['player_uid']),
+                        "\033[31mDelete User \033[93m %s \033[0m from Guild\033[0m \033[93m %s \033[0m   [\033[92m%s\033[0m] Last Online: %d" % (
+                            player['player_info']['player_name'],
+                            item['guild_name'], str(player['player_uid']),
                             player['player_info']['last_online_real_time']))
                     if not dry_run:
                         item['players'].remove(player)
+                        if len(item['players']) == 0:
+                            remove_guilds.append(group_data)
+                            print("\033[31mDelete Guild\033[0m \033[93m %s \033[0m  UUID: %s" % (
+                                item['guild_name'], str(item['group_id'])))
                     break
             removeItems = []
             for ind_char in item['individual_character_handle_ids']:
@@ -512,6 +547,8 @@ def DeletePlayer(player_uid, InstanceId = None, dry_run=False):
             if not dry_run:
                 for ind_char in removeItems:
                     item['individual_character_handle_ids'].remove(ind_char)
+    for guild in remove_guilds:
+        wsd['GroupSaveDataMap']['value'].remove(guild)
     if InstanceId is None:
         print("Finish to remove player from Save, please delete this file manually: %s" % player_sav_file)
 
@@ -676,10 +713,10 @@ def PrettyPrint(data, level = 0):
         elif data['struct_type'] == "PalContainerId":
             print("\033[96m%s\033[0m" % (data['value']['ID']['value']), end="")
         elif isinstance(data['struct_type'], dict):
-            print("%s<S %s>" % ("  " * level, data['struct_type']))
+            print("%s<%s>" % ("  " * level, data['struct_type']))
             for key in data['value']:
                 PrettyPrint(data['value'], level + 1)
-            print("%s</S %s>" % ("  " * level, data['struct_type']))
+            print("%s</%s>" % ("  " * level, data['struct_type']))
         else:
             PrettyPrint(data['value'], level + 1)
     else:
@@ -695,7 +732,7 @@ def PrettyPrint(data, level = 0):
                 print("%s<%s Type='%s'>\033[95m%d\033[0m</%s>" % ("  " * level, key, data[key]['type'], data[key]['value'], key))
             elif 'type' in data[key] and data[key]['type'] == "FloatProperty":
                 print("%s<%s Type='%s'>\033[95m%f\033[0m</%s>" % ("  " * level, key, data[key]['type'], data[key]['value'], key))
-            elif 'type' in data[key] and data[key]['type'] in ["StrProperty", "ArrayProperty"]:
+            elif 'type' in data[key] and data[key]['type'] in ["StrProperty", "ArrayProperty", "NameProperty"]:
                 print("%s<%s Type='%s'>\033[95m%s\033[0m</%s>" % ("  " * level, key, data[key]['type'], data[key]['value'], key))
             elif isinstance(data[key], list):
                 print("%s<%s Type='%s'>%s</%s>" % ("  " * level, key, data[key]['struct_type'] if 'struct_type' in data[
