@@ -74,12 +74,7 @@ def main():
             output_path = args.filename.replace(".json", "")
         else:
             output_path = args.output
-        convert_json_to_sav(
-            args.filename,
-            output_path,
-            force=args.force,
-            allow_nan=(not args.convert_nan_to_null),
-        )
+        convert_json_to_sav(args.filename, output_path, force=args.force)
 
 
 def convert_sav_to_json(
