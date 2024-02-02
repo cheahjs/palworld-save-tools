@@ -180,6 +180,7 @@ def CopyPlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
             new_player_gvas_file = GvasFile.read(raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)
         new_player_gvas = new_player_gvas_file.properties['SaveData']['value']
         player_gvas = player_gvas_file.properties['SaveData']['value']
+        player_uid = str(player_gvas['PlayerUId']['value'])
         player_gvas['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
         player_gvas['IndividualId']['value']['PlayerUId']['value'] = new_player_gvas['PlayerUId']['value']
         player_gvas['IndividualId']['value']['InstanceId']['value'] = new_player_gvas['IndividualId']['value']['InstanceId']['value']
@@ -349,12 +350,6 @@ def CopyPlayer(player_uid, new_player_uid, old_wsd, dry_run=False):
                 save_type = 0x31
             sav_file = compress_gvas_to_sav(player_gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type)
             f.write(sav_file)
-
-# CopyPlayer("2364c188-0000-0000-0000-000000000000", "c23f41c0-0000-0000-0000-000000000000", wsd)
-# Save()
-# MigratePlayer("2364c188-0000-0000-0000-000000000000", "c23f41c0-0000-0000-0000-000000000000")
-# search_values(wsd, "2364c188-0000-0000-0000-000000000000")
-# search_values(wsd, "caebb327-4fec-74b0-1a5b-a186a652ab94")
 
 def MigratePlayer(player_uid, new_player_uid):
     player_sav_file = os.path.dirname(os.path.abspath(args.filename)) + "/Players/" + player_uid.upper().replace("-","") + ".sav"
