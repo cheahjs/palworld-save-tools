@@ -66,9 +66,22 @@ Additional command line arguments:
 
 ### Cleanup Tools
 
-This tools is for cleanup the unreference item, rename the player name, and delete the player.
+This tools is for cleanup the unreference item, rename the player name, migrate player and delete the player.
 
 For cleaning the character and the guild, use the follow command `python palworld-cleanup-tools.py --fix-missing --fix-capture Level.sav`
 
 For modifiy the `Level.sav` file, use the follow command
 `python -i palworld-cleanup-tools.py Level.sav`
+
+The tools have the following commands in interactive mode:
+
+1. `ShowPlayers()`: List the Players
+1. `FixMissing()`: Remove missing player instance
+1. `ShowGuild(fix_capture=False)`: List the Guild and members
+1. `RenamePlayer(uid,new_name)`: Rename player to new_name
+1. `DeletePlayer(uid,InstanceId=None, dry_run=False)`: Wipe player data from save InstanceId: delete specified InstanceId
+1. `EditPlayer(uid)`: Allocate player base meta data to variable 'player'
+1. `OpenBackup(filename)`: Open Backup Level.sav file and assign to backup_wsd
+1. `MigratePlayer(old_uid,new_uid)`: Migrate the player from old PlayerUId to new PlayerUId
+1. `CopyPlayer(old_uid,new_uid, backup_wsd)`: Copy the player from old PlayerUId to new PlayerUId
+1. `Save()`: Save the file and exit
