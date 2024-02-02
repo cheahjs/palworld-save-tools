@@ -3,7 +3,6 @@ from typing import Any, Callable
 from lib.archive import FArchiveReader, FArchiveWriter
 from lib.rawdata import (
     base_camp,
-    base_camp_module,
     build_process,
     character,
     character_container,
@@ -16,6 +15,7 @@ from lib.rawdata import (
     item_container,
     item_container_slots,
     map_model,
+    work,
     work_collection,
     worker_director,
 )
@@ -115,6 +115,7 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         work_collection.encode,
     ),
     # ".worldSaveData.BaseCampSaveData.Value.ModuleMap": (base_camp_module.decode, base_camp_module.encode),
+    ".worldSaveData.WorkSaveData": (work.decode, work.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.RawData": (debug.decode, debug.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value.RawData": (debug.decode, debug.encode),
     # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious

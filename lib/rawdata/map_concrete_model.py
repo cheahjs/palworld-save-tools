@@ -7,7 +7,7 @@ from lib.archive import *
 # ) -> dict[str, Any]:
 #     if type_name != "StructProperty":
 #         raise Exception(f"Expected StructProperty, got {type_name}")
-#     value = reader.property(type_name, size, path, allow_custom=False)
+#     value = reader.property(type_name, size, path, nested_caller_path=path)
 #     # Decode the raw bytes for the map object and replace the raw data
 #     raw_bytes = value["value"]["RawData"]["value"]["values"]
 #     print("".join(f"{b:02x}" for b in raw_bytes))
@@ -37,7 +37,7 @@ from lib.archive import *
 # def decode_map_concrete_model_bytes(m_bytes: Sequence[int]) -> dict[str, Any]:
 #     if len(m_bytes) == 0:
 #         return None
-#     reader = FArchiveReader(bytes(m_bytes))
+#     reader = FArchiveReader(bytes(m_bytes), debug=False)
 #     map_concrete_model = {}
 
 #     if not reader.eof():

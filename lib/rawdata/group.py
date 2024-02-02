@@ -8,7 +8,7 @@ def decode(
 ) -> dict[str, Any]:
     if type_name != "MapProperty":
         raise Exception(f"Expected MapProperty, got {type_name}")
-    value = reader.property(type_name, size, path, allow_custom=False)
+    value = reader.property(type_name, size, path, nested_caller_path=path)
     # Decode the raw bytes and replace the raw data
     group_map = value["value"]
     for group in group_map:
@@ -19,7 +19,7 @@ def decode(
 
 
 def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(group_bytes))
+    reader = FArchiveReader(bytes(group_bytes), debug=False)
     group_data = {
         "group_type": group_type,
         "group_id": reader.guid(),
@@ -37,7 +37,7 @@ def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
         }
         group_data |= org
     if group_type in ["EPalGroupType::Guild", "EPalGroupType::IndependentGuild"]:
-        guild = {
+        guild: dict[str, Any] = {
             "base_camp_level": reader.i32(),
             "map_object_instance_ids_base_camp_points": reader.tarray(uuid_reader),
             "guild_name": reader.fstring(),
@@ -54,7 +54,10 @@ def decode_bytes(group_bytes: Sequence[int], group_type: str) -> dict[str, Any]:
         }
         group_data |= indie
     if group_type == "EPalGroupType::Guild":
-        guild = {"admin_player_uid": reader.guid(), "players": []}
+        guild = {
+            "admin_player_uid": reader.guid(),
+            "players": [],
+        }
         player_count = reader.i32()
         for _ in range(player_count):
             player = {

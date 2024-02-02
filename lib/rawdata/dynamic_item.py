@@ -8,18 +8,18 @@ def decode(
 ) -> dict[str, Any]:
     if type_name != "ArrayProperty":
         raise Exception(f"Expected ArrayProperty, got {type_name}")
-    value = reader.property(type_name, size, path, allow_custom=False)
+    value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
     value["value"] = decode_bytes(data_bytes)
     return value
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
+def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
     buf = bytes(c_bytes)
-    reader = FArchiveReader(buf)
-    data = {}
+    reader = FArchiveReader(buf, debug=False)
+    data: dict[str, Any] = {}
     data["id"] = {
         "created_world_id": reader.guid(),
         "local_id_in_created_world": reader.guid(),
@@ -27,7 +27,7 @@ def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
     }
     data["type"] = "unknown"
     egg_data = try_read_egg(reader)
-    if egg_data != None:
+    if isinstance(egg_data, dict):
         data |= egg_data
     elif (reader.size - reader.data.tell()) == 4:
         data["type"] = "armor"
@@ -36,7 +36,7 @@ def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
             raise Exception("Warning: EOF not reached")
     else:
         cur_pos = reader.data.tell()
-        temp_data = {"type": "weapon"}
+        temp_data: dict[str, Any] = {"type": "weapon"}
         try:
             temp_data["durability"] = reader.float()
             temp_data["remaining_bullets"] = reader.i32()
@@ -46,7 +46,7 @@ def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
             data |= temp_data
         except Exception as e:
             print(
-                f"Warning: Failed to parse weapon data, continuing as raw data {buf}: {e}"
+                f"Warning: Failed to parse weapon data, continuing as raw data {buf!r}: {e}"
             )
             reader.data.seek(cur_pos)
             data["trailer"] = [int(b) for b in reader.read_to_end()]
@@ -56,7 +56,7 @@ def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
 def try_read_egg(reader: FArchiveReader) -> Optional[dict[str, Any]]:
     cur_pos = reader.data.tell()
     try:
-        data = {"type": "egg"}
+        data: dict[str, Any] = {"type": "egg"}
         data["character_id"] = reader.fstring()
         data["object"] = reader.properties_until_end()
         data["unknown_bytes"] = reader.byte_list(4)
@@ -101,6 +101,6 @@ def encode_bytes(p: dict[str, Any]) -> bytes:
     elif p["type"] == "weapon":
         writer.float(p["durability"])
         writer.i32(p["remaining_bullets"])
-        writer.tarray(lambda w, d: w.fstring(d), p["passive_skill_list"])
+        writer.tarray(lambda w, d: (w.fstring(d), None)[1], p["passive_skill_list"])
     encoded_bytes = writer.bytes()
     return encoded_bytes

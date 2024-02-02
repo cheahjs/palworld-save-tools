@@ -8,16 +8,16 @@ def decode(
 ) -> dict[str, Any]:
     if type_name != "ArrayProperty":
         raise Exception(f"Expected ArrayProperty, got {type_name}")
-    value = reader.property(type_name, size, path, allow_custom=False)
+    value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
     value["value"] = decode_bytes(data_bytes)
     return value
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
+def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
-    reader = FArchiveReader(bytes(c_bytes))
+    reader = FArchiveReader(bytes(c_bytes), debug=False)
     data = {}
     data["permission"] = {
         "type_a": reader.tarray(lambda r: r.byte()),
@@ -46,6 +46,8 @@ def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
     writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_a"])
     writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_b"])
-    writer.tarray(lambda w, d: w.fstring(d), p["permission"]["item_static_ids"])
+    writer.tarray(
+        lambda w, d: (w.fstring(d), None)[1], p["permission"]["item_static_ids"]
+    )
     encoded_bytes = writer.bytes()
     return encoded_bytes

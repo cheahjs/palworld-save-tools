@@ -8,7 +8,7 @@ def decode(
 ) -> dict[str, Any]:
     if type_name != "ArrayProperty":
         raise Exception(f"Expected ArrayProperty, got {type_name}")
-    value = reader.property(type_name, size, path, allow_custom=False)
+    value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
     value["value"] = decode_bytes(data_bytes)
     return value
@@ -26,15 +26,16 @@ def connect_info_item_writer(writer: FArchiveWriter, properties: dict[str, Any])
     writer.byte(properties["index"])
 
 
-def decode_bytes(c_bytes: Sequence[int]) -> dict[str, Any]:
+def decode_bytes(c_bytes: Sequence[int]) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
         return None
-    reader = FArchiveReader(bytes(c_bytes))
-    data = {}
-    data["supported_level"] = reader.i32()
-    data["connect"] = {
-        "index": reader.byte(),
-        "any_place": reader.tarray(connect_info_item_reader),
+    reader = FArchiveReader(bytes(c_bytes), debug=False)
+    data: dict[str, Any] = {
+        "supported_level": reader.i32(),
+        "connect": {
+            "index": reader.byte(),
+            "any_place": reader.tarray(connect_info_item_reader),
+        },
     }
     # We are guessing here, we don't have information about the type without mapping object names -> types
     # Stairs have 2 connectors (up and down),

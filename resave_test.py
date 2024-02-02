@@ -14,7 +14,7 @@ def main():
     print(f"Testing if {input_path} is the same after resaving...")
     output_json_path = input_path + ".resave.json"
     output_sav_path = input_path + ".resave.sav"
-    convert_sav_to_json(input_path, output_json_path, True)
+    convert_sav_to_json(input_path, output_json_path, minify=True)
     convert_json_to_sav(output_json_path, output_sav_path)
     print(f"Comparing {input_path} and {output_sav_path}...")
     with open(input_path, "rb") as f:

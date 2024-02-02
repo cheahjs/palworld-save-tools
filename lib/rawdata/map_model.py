@@ -8,15 +8,15 @@ def decode(
 ) -> dict[str, Any]:
     if type_name != "ArrayProperty":
         raise Exception(f"Expected ArrayProperty, got {type_name}")
-    value = reader.property(type_name, size, path, allow_custom=False)
+    value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
     value["value"] = decode_bytes(data_bytes)
     return value
 
 
 def decode_bytes(m_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(m_bytes))
-    data = {}
+    reader = FArchiveReader(bytes(m_bytes), debug=False)
+    data: dict[str, Any] = {}
     data["instance_id"] = reader.guid()
     data["concrete_model_instance_id"] = reader.guid()
     data["base_camp_id_belong_to"] = reader.guid()

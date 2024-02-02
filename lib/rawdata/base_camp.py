@@ -8,23 +8,24 @@ def decode(
 ) -> dict[str, Any]:
     if type_name != "ArrayProperty":
         raise Exception(f"Expected ArrayProperty, got {type_name}")
-    value = reader.property(type_name, size, path, allow_custom=False)
+    value = reader.property(type_name, size, path, nested_caller_path=path)
     data_bytes = value["value"]["values"]
     value["value"] = decode_bytes(data_bytes)
     return value
 
 
 def decode_bytes(b_bytes: Sequence[int]) -> dict[str, Any]:
-    reader = FArchiveReader(bytes(b_bytes))
-    data = {}
-    data["id"] = reader.guid()
-    data["name"] = reader.fstring()
-    data["state"] = reader.byte()
-    data["transform"] = reader.ftransform()
-    data["area_range"] = reader.float()
-    data["group_id_belong_to"] = reader.guid()
-    data["fast_travel_local_transform"] = reader.ftransform()
-    data["owner_map_object_instance_id"] = reader.guid()
+    reader = FArchiveReader(bytes(b_bytes), debug=False)
+    data = {
+        "id": reader.guid(),
+        "name": reader.fstring(),
+        "state": reader.byte(),
+        "transform": reader.ftransform(),
+        "area_range": reader.float(),
+        "group_id_belong_to": reader.guid(),
+        "fast_travel_local_transform": reader.ftransform(),
+        "owner_map_object_instance_id": reader.guid(),
+    }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

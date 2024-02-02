@@ -1,33 +1,24 @@
 # palworld-save-tools
 Tools for converting Palworld .sav files to JSON and back.
 
-> [!IMPORTANT]
-> This tool has changed how the JSON files are formatted starting with v0.9.
-> You cannot load JSON files created by older versions of the tool, and other tools that depend on the JSON output of `palworld-save-tools` will break.
-> In exchange, you will no longer need `uesave-rs`, the tool runs faster, and doesn't use as much RAM.
+This tool currently supports additional parsing of the following data in the `Level.sav` not handled by `uesave` or other non-Palworld aware Unreal save editors:
 
-> [!CAUTION]
-> Any versions older than v0.4 will create corrupt `Level.sav` files when converting from JSON to SAV. Please make sure to update to avoid data corruption.
-
-This tool currently supports additional parsing of the following data not handled by `uesave` or other non-Palworld aware Unreal save editors:
-
-1. `Level.sav`:`GroupSaveDataMap`
+1. `GroupSaveDataMap`
     - Groups such as in-game organizations and guilds
-1. `Level.sav`:`CharacterSaveParameterMap`
+1. `CharacterSaveParameterMap`
     - Characters such as players and pals
-1. `Level.sav`: `MapObjectSaveData.MapObjectSaveData.Model`
-1. `Level.sav`: `ItemContainerSaveData`
-1. `Level.sav`: `CharacterContainerSaveData`
-1. `Level.sav`: `DynamicItemSaveData`
-1. `Level.sav`: `FoliageGridSaveDataMap`
-1. `Level.sav`: `BaseCampSaveData`
+1. `MapObjectSaveData.MapObjectSaveData.Model`
+1. `ItemContainerSaveData`
+1. `CharacterContainerSaveData`
+1. `DynamicItemSaveData`
+1. `FoliageGridSaveDataMap`
+1. `BaseCampSaveData`
+1. `WorkSaveData`
 
 Some fields that are not currently parsed:
 
-1. `Level.sav`: `BaseCampSaveData.Value.ModuleMap`
-1. `Level.sav`: `WorkSaveData.WorkSaveData`
-1. `Level.sav`: `WorkSaveData.WorkSaveData.WorkAssignMap`
-1. `Level.sav`: `MapObjectSaveData.MapObjectSaveData.ConcreteModel`
+1. `BaseCampSaveData.Value.ModuleMap`
+1. `MapObjectSaveData.MapObjectSaveData.ConcreteModel`
 
 ## Converting co-op saves to dedicated server saves
 
@@ -71,7 +62,7 @@ Additional command line arguments:
 1. `--from-json`: Force JSON to SAV conversion regardless of file extension
 1. `--output`: Override the default output path
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
-
+1. `--force`: Overwrite output files if they exist without prompting
 
 ### Cleanup Tools
 
