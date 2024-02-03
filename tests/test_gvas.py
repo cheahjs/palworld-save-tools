@@ -1,15 +1,14 @@
 import base64
 import json
 import unittest
-import uuid
 
 from parameterized import parameterized
 
-from lib.archive import UUID, FArchiveReader, FArchiveWriter
-from lib.gvas import GvasFile, GvasHeader
-from lib.json_tools import CustomEncoder
-from lib.palsav import decompress_sav_to_gvas
-from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
+from palworld_save_tools.archive import UUID, FArchiveReader, FArchiveWriter
+from palworld_save_tools.gvas import GvasFile, GvasHeader
+from palworld_save_tools.json_tools import CustomEncoder
+from palworld_save_tools.palsav import decompress_sav_to_gvas
+from palworld_save_tools.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 
 
 class TestGvas(unittest.TestCase):

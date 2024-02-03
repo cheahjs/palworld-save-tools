@@ -1,6 +1,6 @@
 from typing import Any
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 
 def decode(

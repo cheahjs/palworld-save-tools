@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 
 def decode(
@@ -15,17 +15,15 @@ def decode(
 
 
 def decode_bytes(
-    parent_reader: FArchiveReader, c_bytes: Sequence[int]
-) -> Optional[dict[str, Any]]:
-    if len(c_bytes) == 0:
-        return None
-    reader = parent_reader.internal_copy(bytes(c_bytes), debug=False)
-    data = {}
-    data["permission"] = {
-        "type_a": reader.tarray(lambda r: r.byte()),
-        "type_b": reader.tarray(lambda r: r.byte()),
-        "item_static_ids": reader.tarray(lambda r: r.fstring()),
-    }
+    parent_reader: FArchiveReader, b_bytes: Sequence[int]
+) -> dict[str, Any]:
+    reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
+    data: dict[str, Any] = {}
+    data["id"] = reader.guid()
+    data["spawn_transform"] = reader.ftransform()
+    data["current_order_type"] = reader.byte()
+    data["current_battle_type"] = reader.byte()
+    data["container_id"] = reader.guid()
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
@@ -43,13 +41,11 @@ def encode(
 
 
 def encode_bytes(p: dict[str, Any]) -> bytes:
-    if p is None:
-        return bytes()
     writer = FArchiveWriter()
-    writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_a"])
-    writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_b"])
-    writer.tarray(
-        lambda w, d: (w.fstring(d), None)[1], p["permission"]["item_static_ids"]
-    )
+    writer.guid(p["id"])
+    writer.ftransform(p["spawn_transform"])
+    writer.byte(p["current_order_type"])
+    writer.byte(p["current_battle_type"])
+    writer.guid(p["container_id"])
     encoded_bytes = writer.bytes()
     return encoded_bytes

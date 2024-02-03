@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 
 def decode(
@@ -18,13 +18,15 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data: dict[str, Any] = {}
-    data["model_id"] = reader.fstring()
-    data["foliage_preset_type"] = reader.byte()
-    data["cell_coord"] = {
-        "x": reader.i64(),
-        "y": reader.i64(),
-        "z": reader.i64(),
+    data = {
+        "id": reader.guid(),
+        "name": reader.fstring(),
+        "state": reader.byte(),
+        "transform": reader.ftransform(),
+        "area_range": reader.float(),
+        "group_id_belong_to": reader.guid(),
+        "fast_travel_local_transform": reader.ftransform(),
+        "owner_map_object_instance_id": reader.guid(),
     }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
@@ -44,12 +46,13 @@ def encode(
 
 def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
-
-    writer.fstring(p["model_id"])
-    writer.byte(p["foliage_preset_type"])
-    writer.i64(p["cell_coord"]["x"])
-    writer.i64(p["cell_coord"]["y"])
-    writer.i64(p["cell_coord"]["z"])
-
+    writer.guid(p["id"])
+    writer.fstring(p["name"])
+    writer.byte(p["state"])
+    writer.ftransform(p["transform"])
+    writer.float(p["area_range"])
+    writer.guid(p["group_id_belong_to"])
+    writer.ftransform(p["fast_travel_local_transform"])
+    writer.guid(p["owner_map_object_instance_id"])
     encoded_bytes = writer.bytes()
     return encoded_bytes

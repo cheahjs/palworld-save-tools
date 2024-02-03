@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 
 def decode(
@@ -20,11 +20,13 @@ def decode_bytes(
     if len(c_bytes) == 0:
         return None
     reader = parent_reader.internal_copy(bytes(c_bytes), debug=False)
-    data = {
-        "player_uid": reader.guid(),
-        "instance_id": reader.guid(),
-        "permission_tribe_id": reader.byte(),
+    data: dict[str, Any] = {}
+    data["permission"] = {
+        "type_a": reader.tarray(lambda r: r.byte()),
+        "type_b": reader.tarray(lambda r: r.byte()),
+        "item_static_ids": reader.tarray(lambda r: r.fstring()),
     }
+    data["corruption_progress_value"] = reader.float()
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
@@ -45,8 +47,11 @@ def encode_bytes(p: dict[str, Any]) -> bytes:
     if p is None:
         return bytes()
     writer = FArchiveWriter()
-    writer.guid(p["player_uid"])
-    writer.guid(p["instance_id"])
-    writer.byte(p["permission_tribe_id"])
+    writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_a"])
+    writer.tarray(lambda w, d: w.byte(d), p["permission"]["type_b"])
+    writer.tarray(
+        lambda w, d: (w.fstring(d), None)[1], p["permission"]["item_static_ids"]
+    )
+    writer.float(p["corruption_progress_value"])
     encoded_bytes = writer.bytes()
     return encoded_bytes

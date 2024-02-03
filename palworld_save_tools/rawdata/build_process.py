@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 
 def decode(
@@ -18,24 +18,10 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data: dict[str, Any] = {}
-    data["model_instance_id"] = reader.guid()
-    pitch, yaw, roll = reader.compressed_short_rotator()
-    x, y, z = reader.packed_vector(1)
-    data["world_transform"] = {
-        "rotator": {
-            "pitch": pitch,
-            "yaw": yaw,
-            "roll": roll,
-        },
-        "location": {
-            "x": x,
-            "y": y,
-            "z": z,
-        },
-        "scale_x": reader.float(),
+    data = {
+        "state": reader.byte(),
+        "id": reader.guid(),
     }
-    data["hp"] = reader.i32()
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
@@ -54,21 +40,7 @@ def encode(
 
 def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
-
-    writer.guid(p["model_instance_id"])
-    writer.compressed_short_rotator(
-        p["world_transform"]["rotator"]["pitch"],
-        p["world_transform"]["rotator"]["yaw"],
-        p["world_transform"]["rotator"]["roll"],
-    )
-    writer.packed_vector(
-        1,
-        p["world_transform"]["location"]["x"],
-        p["world_transform"]["location"]["y"],
-        p["world_transform"]["location"]["z"],
-    )
-    writer.float(p["world_transform"]["scale_x"])
-    writer.i32(p["hp"])
-
+    writer.byte(p["state"])
+    writer.guid(p["id"])
     encoded_bytes = writer.bytes()
     return encoded_bytes

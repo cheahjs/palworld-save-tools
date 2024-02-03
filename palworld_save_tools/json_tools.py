@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from lib.archive import UUID
+from palworld_save_tools.archive import UUID
 
 
 class CustomEncoder(json.JSONEncoder):

@@ -2,8 +2,11 @@
 # This scripts takes a .sav file as input, and runs through the sav > JSON > sav process to ensure that the output is the same as the input.
 import sys
 
-from convert import convert_json_to_sav, convert_sav_to_json
-from lib.palsav import decompress_sav_to_gvas
+from palworld_save_tools.commands.convert import (
+    convert_json_to_sav,
+    convert_sav_to_json,
+)
+from palworld_save_tools.palsav import decompress_sav_to_gvas
 
 
 def main():
