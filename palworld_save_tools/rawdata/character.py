@@ -3,6 +3,13 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class Character(SerializableBase):
+    object: UStruct
+    unknown_bytes: Sequence[int]
+    group_id: UUID
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -18,11 +25,11 @@ def decode_bytes(
     parent_reader: FArchiveReader, char_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(char_bytes), debug=False)
-    char_data = {
-        "object": reader.properties_until_end(),
-        "unknown_bytes": reader.byte_list(4),
-        "group_id": reader.guid(),
-    }
+    char_data = Character(
+        object=reader.properties_until_end(),
+        unknown_bytes=reader.byte_list(4),
+        group_id=reader.guid(),
+    )
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return char_data

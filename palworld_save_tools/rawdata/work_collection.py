@@ -3,6 +3,12 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class WorkCollection(SerializableBase):
+    id: UUID
+    work_ids: list[UUID]
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -18,9 +24,10 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data: dict[str, Any] = {}
-    data["id"] = reader.guid()
-    data["work_ids"] = reader.tarray(uuid_reader)
+    data = WorkCollection(
+        id=reader.guid(),
+        work_ids=reader.tarray(uuid_reader),
+    )
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

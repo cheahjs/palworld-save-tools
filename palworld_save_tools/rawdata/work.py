@@ -23,6 +23,187 @@ WORK_BASE_TYPES = set(
 )
 
 
+@dataclasses.dataclass(slots=True)
+class AssignLocation(SerializableBase):
+    location: FVector
+    facing_direction: FVector
+
+
+@dataclasses.dataclass(slots=True)
+class BoxSphereBounds(SerializableBase):
+    origin: FVector
+    box_extent: FVector
+    sphere_radius: Optional[float]
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableBounds(SerializableBase):
+    location: FVector
+    rotation: FQuat
+    box_sphere_bounds: BoxSphereBounds
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableBase(SerializableBase):
+    id: UUID
+    workable_bounds: dict[str, Any]
+    base_camp_id_belong_to: UUID
+    owner_map_object_model_id: UUID
+    owner_map_object_concrete_model_id: UUID
+    current_state: int
+    assign_locations: list[AssignLocation]
+    behaviour_type: int
+    assign_define_data_id: str
+    override_work_type: int
+    assignable_fixed_type: int
+    assignable_otomo: bool
+    can_trigger_worker_event: bool
+    can_steal_assign: bool
+    transform: Optional["WorkableTransformBase"]
+
+    def __init__(
+        self,
+        id: UUID,
+        workable_bounds: WorkableBounds,
+        base_camp_id_belong_to: UUID,
+        owner_map_object_model_id: UUID,
+        owner_map_object_concrete_model_id: UUID,
+        current_state: int,
+        assign_locations: list[AssignLocation],
+        behaviour_type: int,
+        assign_define_data_id: str,
+        override_work_type: int,
+        assignable_fixed_type: int,
+        assignable_otomo: bool,
+        can_trigger_worker_event: bool,
+        can_steal_assign: bool,
+        transform: Optional["WorkableTransformBase"] = None,
+    ):
+        self.id = id
+        self.workable_bounds = workable_bounds
+        self.base_camp_id_belong_to = base_camp_id_belong_to
+        self.owner_map_object_model_id = owner_map_object_model_id
+        self.owner_map_object_concrete_model_id = owner_map_object_concrete_model_id
+        self.current_state = current_state
+        self.assign_locations = assign_locations
+        self.behaviour_type = behaviour_type
+        self.assign_define_data_id = assign_define_data_id
+        self.override_work_type = override_work_type
+        self.assignable_fixed_type = assignable_fixed_type
+        self.assignable_otomo = assignable_otomo
+        self.can_trigger_worker_event = can_trigger_worker_event
+        self.can_steal_assign = can_steal_assign
+        self.transform = transform
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableDefence(WorkableBase):
+    defense_combat_type: int
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableProgress(WorkableBase):
+    required_work_amount: Optional[float]
+    work_exp: int
+    current_work_amount: Optional[float]
+    auto_work_self_amount_by_sec: Optional[float]
+
+
+@dataclasses.dataclass(slots=True)
+class TargetIndividualId(SerializableBase):
+    player_uid: UUID
+    instance_id: UUID
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableReviveCharacter(WorkableBase):
+    target_individual_id: TargetIndividualId
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableAssign(SerializableBase):
+    handle_id: UUID
+    location_index: int
+    assign_type: int
+    assigned_individual_id: dict[str, Any]
+    state: int
+    fixed: int
+    transform: Optional["WorkProgressTransformBase"]
+
+    def __init__(
+        self,
+        handle_id: UUID,
+        location_index: int,
+        assign_type: int,
+        assigned_individual_id: dict[str, Any],
+        state: int,
+        fixed: int,
+        transform: Optional["WorkProgressTransformBase"] = None,
+    ):
+        self.handle_id = handle_id
+        self.location_index = location_index
+        self.assign_type = assign_type
+        self.assigned_individual_id = assigned_individual_id
+        self.state = state
+        self.fixed = fixed
+        self.transform = transform
+
+
+@dataclasses.dataclass(slots=True)
+class WorkableLevelObject(WorkableAssign):
+    target_map_object_model_id: UUID
+
+
+@dataclasses.dataclass(slots=True)
+class WorkProgressTransformBase(SerializableBase):
+    type: int
+    v2: int
+
+
+@dataclasses.dataclass(slots=True)
+class WorkProgressTransformStatic(WorkProgressTransformBase):
+    location: FVector
+    rotation: FQuat
+    scale: FVector
+
+    def __init__(self, type: int, location: FVector, rotation: FQuat, scale: FVector):
+        self.type = type
+        self.v2 = 0
+        self.location = location
+
+
+@dataclasses.dataclass(slots=True)
+class WorkProgressTransformMapObject(WorkProgressTransformBase):
+    map_object_instance_id: UUID
+
+    def __init__(self, type: int, map_object_instance_id: UUID):
+        self.type = type
+        self.v2 = 0
+        self.map_object_instance_id = map_object_instance_id
+
+
+@dataclasses.dataclass(slots=True)
+class WorkProgressTransformId(WorkProgressTransformBase):
+    guid: UUID
+    instance_id: UUID
+
+    def __init__(self, type: int, guid: UUID, instance_id: UUID):
+        self.type = type
+        self.v2 = 0
+        self.guid = guid
+        self.instance_id = instance_id
+
+
+@dataclasses.dataclass(slots=True)
+class WorkProgressTransformUnknown(WorkProgressTransformBase):
+    raw_data: list[int]
+
+    def __init__(self, type: int, raw_data: list[int]):
+        self.type = type
+        self.v2 = 0
+        self.raw_data = raw_data
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -45,81 +226,111 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int], work_type: str
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data: dict[str, Any] = {}
+    data: Union[WorkableBase, WorkableAssign]
     # Handle base serialization
     if work_type in WORK_BASE_TYPES:
-        data["id"] = reader.guid()
-        data["workable_bounds"] = {
-            "location": reader.vector_dict(),
-            "rotation": reader.quat_dict(),
-            "box_sphere_bounds": {
-                "origin": reader.vector_dict(),
-                "box_extent": reader.vector_dict(),
-                "sphere_radius": reader.double(),
-            },
-        }
-        data["base_camp_id_belong_to"] = reader.guid()
-        data["owner_map_object_model_id"] = reader.guid()
-        data["owner_map_object_concrete_model_id"] = reader.guid()
-        data["current_state"] = reader.byte()
-        data["assign_locations"] = reader.tarray(
-            lambda r: {
-                "location": r.vector_dict(),
-                "facing_direction": r.vector_dict(),
-            }
+        data = WorkableBase(
+            id=reader.guid(),
+            workable_bounds=WorkableBounds(
+                location=reader.vector_dict(),
+                rotation=reader.quat_dict(),
+                box_sphere_bounds=BoxSphereBounds(
+                    origin=reader.vector_dict(),
+                    box_extent=reader.vector_dict(),
+                    sphere_radius=reader.double(),
+                ),
+            ),
+            base_camp_id_belong_to=reader.guid(),
+            owner_map_object_model_id=reader.guid(),
+            owner_map_object_concrete_model_id=reader.guid(),
+            current_state=reader.byte(),
+            assign_locations=reader.tarray(
+                lambda r: AssignLocation(
+                    location=r.vector_dict(),
+                    facing_direction=r.vector_dict(),
+                ),
+            ),
+            behaviour_type=reader.byte(),
+            assign_define_data_id=reader.fstring(),
+            override_work_type=reader.byte(),
+            assignable_fixed_type=reader.byte(),
+            assignable_otomo=reader.u32() > 0,
+            can_trigger_worker_event=reader.u32() > 0,
+            can_steal_assign=reader.u32() > 0,
         )
-        data["behaviour_type"] = reader.byte()
-        data["assign_define_data_id"] = reader.fstring()
-        data["override_work_type"] = reader.byte()
-        data["assignable_fixed_type"] = reader.byte()
-        data["assignable_otomo"] = reader.u32() > 0
-        data["can_trigger_worker_event"] = reader.u32() > 0
-        data["can_steal_assign"] = reader.u32() > 0
         if work_type == "EPalWorkableType::Defense":
-            data["defense_combat_type"] = reader.byte()
+            data = WorkableDefence(
+                **dataclasses.asdict(data),
+                defense_combat_type=reader.byte(),
+            )
         elif work_type == "EPalWorkableType::Progress":
-            data["required_work_amount"] = reader.float()
-            data["work_exp"] = reader.i32()
-            data["current_work_amount"] = reader.float()
-            data["auto_work_self_amount_by_sec"] = reader.float()
+            data = WorkableProgress(
+                **dataclasses.asdict(data),
+                required_work_amount=reader.float(),
+                work_exp=reader.i32(),
+                current_work_amount=reader.float(),
+                auto_work_self_amount_by_sec=reader.float(),
+            )
         elif work_type == "EPalWorkableType::ReviveCharacter":
-            data["target_individual_id"] = {
-                "player_uid": reader.guid(),
-                "instance_id": reader.guid(),
-            }
+            data = WorkableReviveCharacter(
+                **dataclasses.asdict(data),
+                target_individual_id=TargetIndividualId(
+                    player_uid=reader.guid(),
+                    instance_id=reader.guid(),
+                ),
+            )
     # These two do not serialize base data
     elif work_type in ["EPalWorkableType::Assign", "EPalWorkableType::LevelObject"]:
-        data["handle_id"] = reader.guid()
-        data["location_index"] = reader.i32()
-        data["assign_type"] = reader.byte()
-        data["assigned_individual_id"] = {
-            "player_uid": reader.guid(),
-            "instance_id": reader.guid(),
-        }
-        data["state"] = reader.byte()
-        data["fixed"] = reader.u32()
+        data = WorkableAssign(
+            handle_id=reader.guid(),
+            location_index=reader.i32(),
+            assign_type=reader.byte(),
+            assigned_individual_id={
+                "player_uid": reader.guid(),
+                "instance_id": reader.guid(),
+            },
+            state=reader.byte(),
+            fixed=reader.u32(),
+        )
         if work_type == "EPalWorkableType::LevelObject":
-            data["target_map_object_model_id"] = reader.guid()
-
-    if len(data.keys()) == 0:
+            data = WorkableLevelObject(
+                **dataclasses.asdict(data),
+                target_map_object_model_id=reader.guid(),
+            )
+    else:
         print(f"Warning, unable to parse {work_type}, falling back to raw bytes")
         return {"values": b_bytes}
     # UPalWorkProgressTransformBase->SerializeProperties
     transform_type = reader.byte()
-    data["transform"] = {"type": transform_type, "v2": 0}
+    transform: WorkProgressTransformBase
     if transform_type == 1:
-        data["transform"].update(reader.ftransform())
+        transform = WorkProgressTransformStatic(
+            type=transform_type,
+            location=reader.vector_dict(),
+            rotation=reader.quat_dict(),
+            scale=reader.vector_dict(),
+        )
     elif transform_type == 2:
-        data["transform"]["map_object_instance_id"] = reader.guid()
+        transform = WorkProgressTransformMapObject(
+            type=transform_type,
+            map_object_instance_id=reader.guid(),
+        )
     elif transform_type == 3:
-        data["transform"]["guid"] = reader.guid()
-        data["transform"]["instance_id"] = reader.guid()
+        transform = WorkProgressTransformId(
+            type=transform_type,
+            guid=reader.guid(),
+            instance_id=reader.guid(),
+        )
     else:
         remaining_data = reader.read_to_end()
         print(
             f"Unknown EPalWorkTransformType, please report this: {transform_type}: {work_type}: {''.join(f'{b:02x}' for b in remaining_data)}"
         )
-        data["transform"]["raw_data"] = [b for b in remaining_data]
+        transform = WorkProgressTransformUnknown(
+            type=transform_type,
+            raw_data=[b for b in remaining_data],
+        )
+    data.transform = transform
 
     if not reader.eof():
         raise Exception(

@@ -3,6 +3,20 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class FoliageModelWorldTransform(SerializableBase):
+    rotator: Rotator
+    location: FVector
+    scale_x: Optional[float]
+
+
+@dataclasses.dataclass(slots=True)
+class FoliageModelInstance(SerializableBase):
+    model_instance_id: UUID
+    world_transform: dict[str, Any]
+    hp: int
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -18,27 +32,20 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data: dict[str, Any] = {}
-    data["model_instance_id"] = reader.guid()
-    pitch, yaw, roll = reader.compressed_short_rotator()
+    model_instance_id = reader.guid()
+    rotator = reader.compressed_short_rotator()
     x, y, z = reader.packed_vector(1)
-    data["world_transform"] = {
-        "rotator": {
-            "pitch": pitch,
-            "yaw": yaw,
-            "roll": roll,
-        },
-        "location": {
-            "x": x,
-            "y": y,
-            "z": z,
-        },
-        "scale_x": reader.float(),
-    }
-    data["hp"] = reader.i32()
+    scale_x = reader.float()
+    hp = reader.i32()
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
-    return data
+    return FoliageModelInstance(
+        model_instance_id=model_instance_id,
+        world_transform=FoliageModelWorldTransform(
+            rotator=rotator, location=FVector(x, y, z), scale_x=scale_x
+        ),
+        hp=hp,
+    )
 
 
 def encode(

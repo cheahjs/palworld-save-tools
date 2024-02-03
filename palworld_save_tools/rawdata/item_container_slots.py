@@ -1,6 +1,13 @@
 from typing import Any, Sequence
 
 from palworld_save_tools.archive import *
+from palworld_save_tools.rawdata.item_container import Permission
+
+
+@dataclasses.dataclass(slots=True)
+class ItemContainerSlot(SerializableBase):
+    permission: Permission
+    corruption_progress_value: Optional[float]
 
 
 def decode(
@@ -20,13 +27,14 @@ def decode_bytes(
     if len(c_bytes) == 0:
         return None
     reader = parent_reader.internal_copy(bytes(c_bytes), debug=False)
-    data: dict[str, Any] = {}
-    data["permission"] = {
-        "type_a": reader.tarray(lambda r: r.byte()),
-        "type_b": reader.tarray(lambda r: r.byte()),
-        "item_static_ids": reader.tarray(lambda r: r.fstring()),
-    }
-    data["corruption_progress_value"] = reader.float()
+    data = ItemContainerSlot(
+        permission=Permission(
+            type_a=reader.tarray(lambda r: r.byte()),
+            type_b=reader.tarray(lambda r: r.byte()),
+            item_static_ids=reader.tarray(lambda r: r.fstring()),
+        ),
+        corruption_progress_value=reader.float(),
+    )
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

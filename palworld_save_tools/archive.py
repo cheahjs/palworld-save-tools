@@ -1,3 +1,4 @@
+import dataclasses
 import io
 import math
 import os
@@ -75,17 +76,145 @@ class UUID:
         return str(self) == str(__value)
 
 
+class SerializableBase:
+    """Base class for serializable objects for marking objects for CustomEncoder"""
+
+    __slots__ = ["__dict__"]
+
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        return setattr(self, key, value)
+
+    def to_json(self) -> dict[str, Any]:
+        return dataclasses.asdict(self) | self.__dict__
+
+
+@dataclasses.dataclass(slots=True)
+class InstanceId(SerializableBase):
+    guid: UUID
+    instance_id: UUID
+
+
+class UStruct(SerializableBase):
+    """Class for denoting a UStruct.
+    This is simply a dict to nake use of key-sharing dictionary to reduce memory usage
+    """
+
+    def to_json(self) -> dict[str, Any]:
+        return self.__dict__
+
+
+@dataclasses.dataclass(slots=True)
+class Property(SerializableBase):
+    type: str
+
+
+@dataclasses.dataclass(slots=True)
+class ScalarProperty(Property):
+    id: Optional[UUID]
+    value: Any
+
+
+@dataclasses.dataclass(slots=True)
+class ArrayProperty(Property):
+    id: Optional[UUID]
+    array_type: str
+    value: Union["ArrayStructValue", "ArrayValue"]
+
+
+@dataclasses.dataclass(slots=True)
+class MapProperty(Property):
+    id: Optional[UUID]
+    key_type: str
+    value_type: str
+    key_struct_type: Optional[str]
+    value_struct_type: Optional[str]
+    value: list["MapValue"]
+
+
+@dataclasses.dataclass(slots=True)
+class StructValue(Property):
+    id: Optional[UUID]
+    struct_type: str
+    struct_id: UUID
+    value: Any
+
+
+@dataclasses.dataclass(slots=True)
+class FVector(UStruct):
+    x: Optional[_float]
+    y: Optional[_float]
+    z: Optional[_float]
+
+
+@dataclasses.dataclass(slots=True)
+class FQuat(UStruct):
+    x: Optional[_float]
+    y: Optional[_float]
+    z: Optional[_float]
+    w: Optional[_float]
+
+
+@dataclasses.dataclass(slots=True)
+class FTransform(UStruct):
+    rotation: FQuat
+    translation: FVector
+    scale3d: FVector
+
+
+@dataclasses.dataclass(slots=True)
+class FLinearColor(UStruct):
+    r: Optional[_float]
+    g: Optional[_float]
+    b: Optional[_float]
+    a: Optional[_float]
+
+
+@dataclasses.dataclass(slots=True)
+class ArrayValue(SerializableBase):
+    values: list[Any]
+
+
+@dataclasses.dataclass(slots=True)
+class ArrayStructValue(ArrayValue):
+    prop_name: str
+    prop_type: str
+    type_name: str
+    id: UUID
+
+
+@dataclasses.dataclass(slots=True)
+class EnumValue(SerializableBase):
+    type: str
+    value: str
+
+
+@dataclasses.dataclass(slots=True)
+class Rotator(SerializableBase):
+    pitch: _float
+    yaw: _float
+    roll: _float
+
+
+@dataclasses.dataclass(slots=True)
+class MapValue(SerializableBase):
+    key: SerializableBase
+    value: SerializableBase
+
+
 # Specify a type for JSON-serializable objects
 JSON = Union[
     None, bool, int, float, str, list["JSON"], dict[str, "JSON"], UUID, uuid.UUID
 ]
 
 
-def instance_id_reader(reader: "FArchiveReader") -> dict[str, UUID]:
-    return {
-        "guid": reader.guid(),
-        "instance_id": reader.guid(),
-    }
+def instance_id_reader(reader: "FArchiveReader") -> InstanceId:
+    return InstanceId(
+        guid=reader.guid(),
+        instance_id=reader.guid(),
+    )
 
 
 def uuid_reader(reader: "FArchiveReader") -> UUID:
@@ -262,8 +391,8 @@ class FArchiveReader:
             array.append(type_reader(self))
         return array
 
-    def properties_until_end(self, path: str = "") -> dict[str, Any]:
-        properties = {}
+    def properties_until_end(self, path: str = "") -> UStruct:
+        properties = UStruct()
         while True:
             name = self.fstring()
             if name == "None":
@@ -275,68 +404,78 @@ class FArchiveReader:
 
     def property(
         self, type_name: str, size: int, path: str, nested_caller_path: str = ""
-    ) -> dict[str, Any]:
-        value = {}
+    ) -> Property:
         if path in self.custom_properties and (
             path is not nested_caller_path or nested_caller_path == ""
         ):
             value = self.custom_properties[path][0](self, type_name, size, path)
             value["custom_type"] = path
+            value["type"] = type_name
+            return value
         elif type_name == "StructProperty":
-            value = self.struct(path)
+            return self.struct(path)
         elif type_name == "IntProperty":
-            value = {
-                "id": self.optional_guid(),
-                "value": self.i32(),
-            }
+            return ScalarProperty(
+                id=self.optional_guid(),
+                type=type_name,
+                value=self.i32(),
+            )
         elif type_name == "Int64Property":
-            value = {
-                "id": self.optional_guid(),
-                "value": self.i64(),
-            }
+            return ScalarProperty(
+                id=self.optional_guid(),
+                type=type_name,
+                value=self.i64(),
+            )
         elif type_name == "FixedPoint64Property":
-            value = {
-                "id": self.optional_guid(),
-                "value": self.i32(),
-            }
+            return ScalarProperty(
+                id=self.optional_guid(),
+                type=type_name,
+                value=self.i32(),
+            )
         elif type_name == "FloatProperty":
-            value = {
-                "id": self.optional_guid(),
-                "value": self.float(),
-            }
+            return ScalarProperty(
+                id=self.optional_guid(),
+                type=type_name,
+                value=self.float(),
+            )
         elif type_name == "StrProperty":
-            value = {
-                "id": self.optional_guid(),
-                "value": self.fstring(),
-            }
+            return ScalarProperty(
+                id=self.optional_guid(),
+                type=type_name,
+                value=self.fstring(),
+            )
         elif type_name == "NameProperty":
-            value = {
-                "id": self.optional_guid(),
-                "value": self.fstring(),
-            }
+            return ScalarProperty(
+                id=self.optional_guid(),
+                type=type_name,
+                value=self.fstring(),
+            )
         elif type_name == "EnumProperty":
             enum_type = self.fstring()
             _id = self.optional_guid()
             enum_value = self.fstring()
-            value = {
-                "id": _id,
-                "value": {
-                    "type": enum_type,
-                    "value": enum_value,
-                },
-            }
+            return ScalarProperty(
+                id=_id,
+                type=type_name,
+                value=EnumValue(
+                    type=enum_type,
+                    value=enum_value,
+                ),
+            )
         elif type_name == "BoolProperty":
-            value = {
-                "value": self.bool(),
-                "id": self.optional_guid(),
-            }
+            return ScalarProperty(
+                value=self.bool(),
+                type=type_name,
+                id=self.optional_guid(),
+            )
         elif type_name == "ArrayProperty":
             array_type = self.fstring()
-            value = {
-                "array_type": array_type,
-                "id": self.optional_guid(),
-                "value": self.array_property(array_type, size - 4, path),
-            }
+            return ArrayProperty(
+                array_type=array_type,
+                type=type_name,
+                id=self.optional_guid(),
+                value=self.array_property(array_type, size - 4, path),
+            )
         elif type_name == "MapProperty":
             key_type = self.fstring()
             value_type = self.fstring()
@@ -353,28 +492,22 @@ class FArchiveReader:
                 value_struct_type = self.get_type_or(value_path, "StructProperty")
             else:
                 value_struct_type = None
-            values: list[dict[str, Any]] = []
+            values: list[MapValue] = []
             for _ in range(count):
                 key = self.prop_value(key_type, key_struct_type, key_path)
                 value = self.prop_value(value_type, value_struct_type, value_path)
-                values.append(
-                    {
-                        "key": key,
-                        "value": value,
-                    }
-                )
-            value = {
-                "key_type": key_type,
-                "value_type": value_type,
-                "key_struct_type": key_struct_type,
-                "value_struct_type": value_struct_type,
-                "id": _id,
-                "value": values,
-            }
+                values.append(MapValue(key=key, value=value))
+            return MapProperty(
+                key_type=key_type,
+                value_type=value_type,
+                key_struct_type=key_struct_type,
+                value_struct_type=value_struct_type,
+                id=_id,
+                type=type_name,
+                value=values,
+            )
         else:
             raise Exception(f"Unknown type: {type_name} ({path})")
-        value["type"] = type_name
-        return value
 
     def prop_value(self, type_name: str, struct_type_name: str, path: str):
         if type_name == "StructProperty":
@@ -395,12 +528,13 @@ class FArchiveReader:
         struct_id = self.guid()
         _id = self.optional_guid()
         value = self.struct_value(struct_type, path)
-        return {
-            "struct_type": struct_type,
-            "struct_id": struct_id,
-            "id": _id,
-            "value": value,
-        }
+        return StructValue(
+            type="StructProperty",
+            struct_type=struct_type,
+            struct_id=struct_id,
+            id=_id,
+            value=value,
+        )
 
     def struct_value(self, struct_type: str, path: str = ""):
         if struct_type == "Vector":
@@ -412,12 +546,12 @@ class FArchiveReader:
         elif struct_type == "Quat":
             return self.quat_dict()
         elif struct_type == "LinearColor":
-            return {
-                "r": self.float(),
-                "g": self.float(),
-                "b": self.float(),
-                "a": self.float(),
-            }
+            return FLinearColor(
+                r=self.float(),
+                g=self.float(),
+                b=self.float(),
+                a=self.float(),
+            )
         else:
             if self.debug:
                 print(f"Assuming struct type: {struct_type} ({path})")
@@ -425,7 +559,6 @@ class FArchiveReader:
 
     def array_property(self, array_type: str, size: int, path: str):
         count = self.u32()
-        value = {}
         if array_type == "StructProperty":
             prop_name = self.fstring()
             prop_type = self.fstring()
@@ -436,18 +569,16 @@ class FArchiveReader:
             prop_values = []
             for _ in range(count):
                 prop_values.append(self.struct_value(type_name, f"{path}.{prop_name}"))
-            value = {
-                "prop_name": prop_name,
-                "prop_type": prop_type,
-                "values": prop_values,
-                "type_name": type_name,
-                "id": _id,
-            }
-        else:
-            value = {
-                "values": self.array_value(array_type, count, size, path),
-            }
-        return value
+            return ArrayStructValue(
+                prop_name=prop_name,
+                prop_type=prop_type,
+                type_name=type_name,
+                id=_id,
+                values=prop_values,
+            )
+        return ArrayValue(
+            values=self.array_value(array_type, count, size, path),
+        )
 
     def array_value(self, array_type: str, count: int, size: int, path: str):
         values = []
@@ -471,14 +602,14 @@ class FArchiveReader:
 
         return values
 
-    def compressed_short_rotator(self) -> tuple[_float, _float, _float]:
+    def compressed_short_rotator(self) -> Rotator:
         short_pitch = self.u16() if self.bool() else 0
         short_yaw = self.u16() if self.bool() else 0
         short_roll = self.u16() if self.bool() else 0
         pitch = short_pitch * (360.0 / 65536.0)
         yaw = short_yaw * (360.0 / 65536.0)
         roll = short_roll * (360.0 / 65536.0)
-        return (pitch, yaw, roll)
+        return Rotator(pitch, yaw, roll)
 
     def serializeint(self, component_bit_count: int) -> int:
         b = bytearray(self.read((component_bit_count + 7) // 8))
@@ -515,32 +646,32 @@ class FArchiveReader:
     def vector(self) -> tuple[Optional[_float], Optional[_float], Optional[_float]]:
         return (self.double(), self.double(), self.double())
 
-    def vector_dict(self) -> dict[str, Optional[_float]]:
-        return {
-            "x": self.double(),
-            "y": self.double(),
-            "z": self.double(),
-        }
+    def vector_dict(self) -> FVector:
+        return FVector(
+            x=self.double(),
+            y=self.double(),
+            z=self.double(),
+        )
 
     def quat(
         self,
     ) -> tuple[Optional[_float], Optional[_float], Optional[_float], Optional[_float]]:
         return (self.double(), self.double(), self.double(), self.double())
 
-    def quat_dict(self) -> dict[str, Optional[_float]]:
-        return {
-            "x": self.double(),
-            "y": self.double(),
-            "z": self.double(),
-            "w": self.double(),
-        }
+    def quat_dict(self) -> FQuat:
+        return FQuat(
+            x=self.double(),
+            y=self.double(),
+            z=self.double(),
+            w=self.double(),
+        )
 
-    def ftransform(self) -> dict[str, dict[str, Optional[_float]]]:
-        return {
-            "rotation": self.quat_dict(),
-            "translation": self.vector_dict(),
-            "scale3d": self.vector_dict(),
-        }
+    def ftransform(self) -> FTransform:
+        return FTransform(
+            rotation=self.quat_dict(),
+            translation=self.vector_dict(),
+            scale3d=self.vector_dict(),
+        )
 
 
 def uuid_writer(writer, s: Union[str, uuid.UUID, UUID]):

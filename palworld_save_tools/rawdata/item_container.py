@@ -3,6 +3,18 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class Permission(SerializableBase):
+    type_a: list[int]
+    type_b: list[int]
+    item_static_ids: list[str]
+
+
+@dataclasses.dataclass(slots=True)
+class ItemContainer(SerializableBase):
+    permission: Permission
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -20,12 +32,13 @@ def decode_bytes(
     if len(c_bytes) == 0:
         return None
     reader = parent_reader.internal_copy(bytes(c_bytes), debug=False)
-    data = {}
-    data["permission"] = {
-        "type_a": reader.tarray(lambda r: r.byte()),
-        "type_b": reader.tarray(lambda r: r.byte()),
-        "item_static_ids": reader.tarray(lambda r: r.fstring()),
-    }
+    data = ItemContainer(
+        permission=Permission(
+            type_a=reader.tarray(lambda r: r.byte()),
+            type_b=reader.tarray(lambda r: r.byte()),
+            item_static_ids=reader.tarray(lambda r: r.fstring()),
+        )
+    )
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

@@ -3,6 +3,20 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class Coord(SerializableBase):
+    x: int
+    y: int
+    z: int
+
+
+@dataclasses.dataclass(slots=True)
+class FoliageModel(SerializableBase):
+    model_id: str
+    foliage_preset_type: int
+    cell_coord: Coord
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -18,14 +32,15 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data: dict[str, Any] = {}
-    data["model_id"] = reader.fstring()
-    data["foliage_preset_type"] = reader.byte()
-    data["cell_coord"] = {
-        "x": reader.i64(),
-        "y": reader.i64(),
-        "z": reader.i64(),
-    }
+    data = FoliageModel(
+        model_id=reader.fstring(),
+        foliage_preset_type=reader.byte(),
+        cell_coord=Coord(
+            x=reader.i64(),
+            y=reader.i64(),
+            z=reader.i64(),
+        ),
+    )
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

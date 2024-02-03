@@ -3,6 +3,18 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class BaseCamp(SerializableBase):
+    id: UUID
+    name: str
+    state: int
+    transform: FTransform
+    area_range: float
+    group_id_belong_to: UUID
+    fast_travel_local_transform: FTransform
+    owner_map_object_instance_id: UUID
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -18,16 +30,16 @@ def decode_bytes(
     parent_reader: FArchiveReader, b_bytes: Sequence[int]
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
-    data = {
-        "id": reader.guid(),
-        "name": reader.fstring(),
-        "state": reader.byte(),
-        "transform": reader.ftransform(),
-        "area_range": reader.float(),
-        "group_id_belong_to": reader.guid(),
-        "fast_travel_local_transform": reader.ftransform(),
-        "owner_map_object_instance_id": reader.guid(),
-    }
+    data = BaseCamp(
+        id=reader.guid(),
+        name=reader.fstring(),
+        state=reader.byte(),
+        transform=reader.ftransform(),
+        area_range=reader.float(),
+        group_id_belong_to=reader.guid(),
+        fast_travel_local_transform=reader.ftransform(),
+        owner_map_object_instance_id=reader.guid(),
+    )
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data

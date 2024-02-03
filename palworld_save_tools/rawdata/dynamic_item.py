@@ -3,6 +3,44 @@ from typing import Any, Sequence
 from palworld_save_tools.archive import *
 
 
+@dataclasses.dataclass(slots=True)
+class DynamicItemId(SerializableBase):
+    created_world_id: UUID
+    local_id_in_created_world: UUID
+    static_id: str
+
+
+@dataclasses.dataclass(slots=True)
+class DynamicItemBase(SerializableBase):
+    id: DynamicItemId
+    type: str
+
+
+@dataclasses.dataclass(slots=True)
+class DynamicItemEgg(DynamicItemBase):
+    character_id: str
+    object: UStruct
+    unknown_bytes: Sequence[int]
+    unknown_id: UUID
+
+
+@dataclasses.dataclass(slots=True)
+class DynamicItemArmor(DynamicItemBase):
+    durability: Optional[float]
+
+
+@dataclasses.dataclass(slots=True)
+class DynamicItemWeapon(DynamicItemBase):
+    durability: Optional[float]
+    remaining_bullets: int
+    passive_skill_list: list[str]
+
+
+@dataclasses.dataclass(slots=True)
+class DynamicItemUnknown(DynamicItemBase):
+    trailer: list[int]
+
+
 def decode(
     reader: FArchiveReader, type_name: str, size: int, path: str
 ) -> dict[str, Any]:
@@ -21,21 +59,24 @@ def decode_bytes(
         return None
     buf = bytes(c_bytes)
     reader = parent_reader.internal_copy(buf, debug=False)
-    data: dict[str, Any] = {}
-    data["id"] = {
-        "created_world_id": reader.guid(),
-        "local_id_in_created_world": reader.guid(),
-        "static_id": reader.fstring(),
-    }
-    data["type"] = "unknown"
+    base_data = DynamicItemBase(
+        id=DynamicItemId(
+            created_world_id=reader.guid(),
+            local_id_in_created_world=reader.guid(),
+            static_id=reader.fstring(),
+        ),
+        type="unknown",
+    )
     egg_data = try_read_egg(reader)
     if isinstance(egg_data, dict):
-        data |= egg_data
+        return DynamicItemEgg(id=base_data.id, **egg_data)
     elif (reader.size - reader.data.tell()) == 4:
-        data["type"] = "armor"
-        data["durability"] = reader.float()
+        armor_data = DynamicItemArmor(
+            id=base_data.id, type="armor", durability=reader.float()
+        )
         if not reader.eof():
             raise Exception("Warning: EOF not reached")
+        return armor_data
     else:
         cur_pos = reader.data.tell()
         temp_data: dict[str, Any] = {"type": "weapon"}
@@ -45,14 +86,17 @@ def decode_bytes(
             temp_data["passive_skill_list"] = reader.tarray(lambda r: r.fstring())
             if not reader.eof():
                 raise Exception("Warning: EOF not reached")
-            data |= temp_data
+            return DynamicItemWeapon(id=base_data.id, **temp_data)
         except Exception as e:
             print(
                 f"Warning: Failed to parse weapon data, continuing as raw data {buf!r}: {e}"
             )
             reader.data.seek(cur_pos)
-            data["trailer"] = [int(b) for b in reader.read_to_end()]
-    return data
+            return DynamicItemUnknown(
+                id=base_data.id,
+                type="unknown",
+                trailer=[int(b) for b in reader.read_to_end()],
+            )
 
 
 def try_read_egg(reader: FArchiveReader) -> Optional[dict[str, Any]]:
