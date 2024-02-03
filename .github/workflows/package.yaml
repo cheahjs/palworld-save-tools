@@ -15,7 +15,7 @@ jobs:
           mkdir -p dist
           cp LICENSE dist/
           cp README.md dist/
-          cp palworld_save_tools/scripts/convert.py dist/
+          cp palworld_save_tools/commands/convert.py dist/
           cp -r lib dist/
           cp convenience_tools/* dist/
           cd dist
