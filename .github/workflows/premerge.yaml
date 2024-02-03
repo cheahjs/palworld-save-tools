@@ -16,7 +16,7 @@ jobs:
     name: Python tests
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', 'pypy3.9', 'pypy3.10']
+        python-version: ['3.10', '3.11', '3.12', 'pypy3.10']
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
