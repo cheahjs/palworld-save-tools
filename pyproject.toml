@@ -21,17 +21,5 @@ dynamic = ["version"]
 Homepage = "https://github.com/cheahjs/palworld-save-tools"
 Issues = "https://github.com/cheahjs/palworld-save-tools/issues"
 
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-  "/.github",
-  "/convenience_tools",
-]
-
-[tool.hatch.build.targets.wheel]
-packages = ["palworld_save_tools"]
-
 [project.scripts]
-cli-name = "palworld_save_tools.scripts.convert:main"
+palworld-save-tools = "palworld_save_tools.commands.convert:main"

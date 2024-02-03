@@ -1,0 +1,14 @@
+[version]
+source = "vcs"
+
+[build.targets.sdist]
+exclude = ["/.github", "/convenience_tools"]
+
+[build.targets.wheel]
+packages = ["palworld_save_tools"]
+
+[envs.test]
+dependencies = ["parameterized"]
+
+[envs.test.scripts]
+run = "python -m unittest -v"

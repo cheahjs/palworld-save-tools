@@ -4,9 +4,9 @@ import unittest
 
 from parameterized import parameterized
 
-from .archive import FArchiveReader
-from .json_tools import CustomEncoder
-from .rawdata import character, foliage_model_instance, group
+from palworld_save_tools.archive import FArchiveReader
+from palworld_save_tools.json_tools import CustomEncoder
+from palworld_save_tools.rawdata import character, foliage_model_instance, group
 
 
 class TestRawData(unittest.TestCase):
