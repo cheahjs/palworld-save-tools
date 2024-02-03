@@ -20,10 +20,6 @@ Some fields that are not currently parsed:
 1. `BaseCampSaveData.Value.ModuleMap`
 1. `MapObjectSaveData.MapObjectSaveData.ConcreteModel`
 
-## Converting co-op saves to dedicated server saves
-
-Please follow the instructions provided over at https://github.com/xNul/palworld-host-save-fix
-
 ## Instructions
 
 > [!IMPORTANT]
@@ -67,10 +63,20 @@ Additional command line arguments:
 
 ## Roadmap
 
-- [] Parse all known blobs of data
-- [] Optimize CPU and memory usage
+- [ ] Parse all known blobs of data
+- [ ] Optimize CPU and memory usage
 
 ## Development philosophy
 
 - No additional dependencies. Scripts should run with a default install of Python. Distributing binary builds of Python is laden with AV false positives.
 - Correctness of the conversion process is more important than performance. SAV > JSON > SAV should yield bit-for-bit identical files (pre-compression).
+
+## Projects that make use of palworld-save-tools
+
+> [!NOTE]
+> This does not serve as an endorsement of any of these projects, use at your own risk.
+
+- [xNul/palworld-host-save-fix](https://github.com/xNul/palworld-host-save-fix/) - Migrating save data between player IDs (eg, converting coop saves to dedicated server saves)
+- [PalEdit](https://github.com/EternalWraith/PalEdit) - GUI for editing Pals
+- [palworld-server-tool](https://github.com/zaigie/palworld-server-tool) - Managing dedicated servers via RCON and SAV file parsing
+- [magicbear/palworld-save-tools](https://github.com/magicbear/palworld-save-tools/tree/clenaup-tools) - Assorted set of SAV file manipulations
