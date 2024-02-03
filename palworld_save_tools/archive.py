@@ -74,6 +74,9 @@ class UUID:
     def __eq__(self, __value: object) -> bool:
         return str(self) == str(__value)
 
+    def __repr__(self) -> str:
+        return "%s.UUID('%s')" % (self.__module__, str(self))
+
 
 # Specify a type for JSON-serializable objects
 JSON = Union[
