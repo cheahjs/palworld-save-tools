@@ -24,6 +24,10 @@ Some fields that are not currently parsed:
 
 Please follow the instructions provided over at https://github.com/xNul/palworld-host-save-fix
 
+## Combine multiple server saves
+
+Please follow the instructions provided over at https://github.com/magicbear/palworld-save-tools
+
 ## Instructions
 
 > [!IMPORTANT]
