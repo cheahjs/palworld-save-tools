@@ -60,6 +60,16 @@ Additional command line arguments:
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
 1. `--force`: Overwrite output files if they exist without prompting
 
+## Developers
+
+This library is available on PyPi, and can be installed with
+
+```shell
+pip install palworld-save-tools
+```
+
+> [!NOTE]
+> Due to ongoing rapid development and the potential for breaking changes, the recommendation is to pin to a specific version, and take updates as necessary.
 
 ## Roadmap
 
