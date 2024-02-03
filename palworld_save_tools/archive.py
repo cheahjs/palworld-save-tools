@@ -88,7 +88,12 @@ class SerializableBase:
         return setattr(self, key, value)
 
     def to_json(self) -> dict[str, Any]:
-        return dataclasses.asdict(self) | self.__dict__
+        json_dict = {}
+        for slots in [getattr(cls, "__slots__", []) for cls in type(self).__mro__]:
+            for attr in slots:
+                if attr != "__dict__":
+                    json_dict[attr] = getattr(self, attr)
+        return json_dict | self.__dict__
 
 
 @dataclasses.dataclass(slots=True)
