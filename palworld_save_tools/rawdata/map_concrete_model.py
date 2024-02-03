@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 # def decode_map_concrete_model(
 #     reader: FArchiveReader, type_name: str, size: int, path: str

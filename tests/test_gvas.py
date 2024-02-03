@@ -5,11 +5,11 @@ import uuid
 
 from parameterized import parameterized
 
-from lib.archive import UUID, FArchiveReader, FArchiveWriter
-from lib.gvas import GvasFile, GvasHeader
-from lib.json_tools import CustomEncoder
-from lib.palsav import decompress_sav_to_gvas
-from lib.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
+from .archive import UUID, FArchiveReader, FArchiveWriter
+from .gvas import GvasFile, GvasHeader
+from .json_tools import CustomEncoder
+from .palsav import decompress_sav_to_gvas
+from .paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 
 
 class TestGvas(unittest.TestCase):

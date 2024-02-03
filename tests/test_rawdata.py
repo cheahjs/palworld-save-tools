@@ -4,9 +4,9 @@ import unittest
 
 from parameterized import parameterized
 
-from lib.archive import FArchiveReader
-from lib.json_tools import CustomEncoder
-from lib.rawdata import character, foliage_model_instance, group
+from .archive import FArchiveReader
+from .json_tools import CustomEncoder
+from .rawdata import character, foliage_model_instance, group
 
 
 class TestRawData(unittest.TestCase):

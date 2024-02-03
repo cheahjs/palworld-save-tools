@@ -3,7 +3,7 @@ import uuid
 
 from parameterized import parameterized
 
-from lib.archive import UUID, FArchiveReader, FArchiveWriter
+from palworld_save_tools.archive import UUID, FArchiveReader, FArchiveWriter
 
 
 class TestArchive(unittest.TestCase):

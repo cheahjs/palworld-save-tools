@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "palworld-save-tools"
+authors = [
+  { name="Jun Siang Cheah", email="me@jscheah.me" },
+]
+description = "Tools for converting Palworld .sav files to JSON and back"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/cheahjs/palworld-save-tools"
+Issues = "https://github.com/cheahjs/palworld-save-tools/issues"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/convenience_tools",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["palworld_save_tools"]
+
+[project.scripts]
+cli-name = "palworld_save_tools.scripts.convert:main"

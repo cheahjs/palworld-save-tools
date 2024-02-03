@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from lib.archive import *
+from palworld_save_tools.archive import *
 
 
 def decode(
@@ -19,11 +19,13 @@ def decode_bytes(
 ) -> dict[str, Any]:
     reader = parent_reader.internal_copy(bytes(b_bytes), debug=False)
     data: dict[str, Any] = {}
-    data["id"] = reader.guid()
-    data["spawn_transform"] = reader.ftransform()
-    data["current_order_type"] = reader.byte()
-    data["current_battle_type"] = reader.byte()
-    data["container_id"] = reader.guid()
+    data["model_id"] = reader.fstring()
+    data["foliage_preset_type"] = reader.byte()
+    data["cell_coord"] = {
+        "x": reader.i64(),
+        "y": reader.i64(),
+        "z": reader.i64(),
+    }
     if not reader.eof():
         raise Exception("Warning: EOF not reached")
     return data
@@ -42,10 +44,12 @@ def encode(
 
 def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
-    writer.guid(p["id"])
-    writer.ftransform(p["spawn_transform"])
-    writer.byte(p["current_order_type"])
-    writer.byte(p["current_battle_type"])
-    writer.guid(p["container_id"])
+
+    writer.fstring(p["model_id"])
+    writer.byte(p["foliage_preset_type"])
+    writer.i64(p["cell_coord"]["x"])
+    writer.i64(p["cell_coord"]["y"])
+    writer.i64(p["cell_coord"]["z"])
+
     encoded_bytes = writer.bytes()
     return encoded_bytes
