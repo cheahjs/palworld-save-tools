@@ -16,7 +16,7 @@ jobs:
           cp LICENSE dist/
           cp README.md dist/
           cp palworld_save_tools/commands/convert.py dist/
-          cp -r lib dist/
+          cp -r palworld_save_tools dist/
           cp convenience_tools/* dist/
           cd dist
           zip -r ../palworld-save-tools-windows-${{steps.ghd.outputs.describe}}.zip *
