@@ -1,0 +1,27 @@
+name: Publish
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+          pip install hatch
+      - name: Build package
+        run: hatch build
+      - name: Test package
+        run: hatch run test:run
+      - name: Publish package to PyPi
+        uses: pypa/gh-action-pypi-publish@release/v1
