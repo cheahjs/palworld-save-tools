@@ -31,13 +31,13 @@ def decode_bytes(
     egg_data = try_read_egg(reader)
     if isinstance(egg_data, dict):
         data |= egg_data
-    elif (reader.size - reader.pos) == 4:
+    elif (reader.size - reader.data.tell()) == 4:
         data["type"] = "armor"
         data["durability"] = reader.float()
         if not reader.eof():
             raise Exception("Warning: EOF not reached")
     else:
-        cur_pos = reader.pos
+        cur_pos = reader.data.tell()
         temp_data: dict[str, Any] = {"type": "weapon"}
         try:
             temp_data["durability"] = reader.float()
@@ -50,13 +50,13 @@ def decode_bytes(
             print(
                 f"Warning: Failed to parse weapon data, continuing as raw data {buf!r}: {e}"
             )
-            reader.pos = cur_pos
+            reader.data.seek(cur_pos)
             data["trailer"] = [int(b) for b in reader.read_to_end()]
     return data
 
 
 def try_read_egg(reader: FArchiveReader) -> Optional[dict[str, Any]]:
-    cur_pos = reader.pos
+    cur_pos = reader.data.tell()
     try:
         data: dict[str, Any] = {"type": "egg"}
         data["character_id"] = reader.fstring()
@@ -69,7 +69,7 @@ def try_read_egg(reader: FArchiveReader) -> Optional[dict[str, Any]]:
     except Exception as e:
         if e.args[0] == "Warning: EOF not reached":
             raise e
-        reader.pos = cur_pos
+        reader.data.seek(cur_pos)
         return None
 
 

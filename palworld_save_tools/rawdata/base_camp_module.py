@@ -87,7 +87,7 @@ def decode_bytes(
         try:
             data["passive_effects"] = reader.tarray(module_passive_effect_reader)
         except Exception as e:
-            reader.pos = 0
+            reader.data.seek(0)
             print(
                 f"Warning: Failed to decode passive effect, please report this: {e} ({bytes(b_bytes)!r})"
             )
