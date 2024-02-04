@@ -101,6 +101,7 @@ def uuid_reader(reader: "FArchiveReader") -> UUID:
 class FArchiveReader:
     __slots__ = [
         "data",
+        "pos",
         "size",
         "pos",
         "type_hints",
@@ -109,7 +110,8 @@ class FArchiveReader:
         "allow_nan",
     ]
 
-    data: io.BytesIO
+    data: memoryview
+    pos: int
     size: int
     type_hints: dict[str, str]
     custom_properties: dict[str, tuple[Callable, Callable]]
@@ -124,7 +126,8 @@ class FArchiveReader:
         debug: bool = os.environ.get("DEBUG", "0") == "1",
         allow_nan: bool = True,
     ):
-        self.data = io.BytesIO(data)
+        self.data = memoryview(data)
+        self.pos = 0
         self.size = len(data)
         self.type_hints = type_hints
         self.custom_properties = custom_properties
@@ -132,11 +135,11 @@ class FArchiveReader:
         self.allow_nan = allow_nan
 
     def __enter__(self):
-        self.data.seek(0)
+        self.pos = 0
         return self
 
     def __exit__(self, type, value, traceback):
-        self.data.close()
+        pass
 
     def internal_copy(self, data, debug: bool) -> "FArchiveReader":
         return FArchiveReader(
@@ -155,21 +158,23 @@ class FArchiveReader:
             return default
 
     def eof(self) -> bool:
-        return self.data.tell() >= self.size
+        return self.pos >= self.size
 
-    def read(self, size: int) -> bytes:
-        return self.data.read(size)
+    def read(self, size: int) -> memoryview:
+        if self.pos + size > self.size:
+            raise Exception("read past end of buffer")
+        self.pos += size
+        return self.data[self.pos - size : self.pos]
 
-    def read_to_end(self) -> bytes:
-        return self.data.read(self.size - self.data.tell())
+    def read_to_end(self) -> memoryview:
+        return self.data[self.pos :]
 
     def bool(self) -> bool:
         return self.byte() > 0
 
     def fstring(self) -> str:
         # in the hot loop, avoid function calls
-        reader = self.data
-        (size,) = FArchiveReader.unpack_i32(reader.read(4))
+        (size,) = FArchiveReader.unpack_i32(self.read(4))
 
         if size == 0:
             return ""
@@ -178,10 +183,10 @@ class FArchiveReader:
         encoding: str
         if size < 0:
             size = -size
-            data = reader.read(size * 2)[:-2]
+            data = self.read(size * 2)[:-2].tobytes()
             encoding = "utf-16-le"
         else:
-            data = reader.read(size)[:-1]
+            data = self.read(size)[:-1].tobytes()
             encoding = "ascii"
 
         try:
@@ -201,37 +206,37 @@ class FArchiveReader:
     unpack_i16 = struct.Struct("h").unpack
 
     def i16(self) -> int:
-        return FArchiveReader.unpack_i16(self.data.read(2))[0]
+        return FArchiveReader.unpack_i16(self.read(2))[0]
 
     unpack_u16 = struct.Struct("H").unpack
 
     def u16(self) -> int:
-        return FArchiveReader.unpack_u16(self.data.read(2))[0]
+        return FArchiveReader.unpack_u16(self.read(2))[0]
 
     unpack_i32 = struct.Struct("i").unpack
 
     def i32(self) -> int:
-        return FArchiveReader.unpack_i32(self.data.read(4))[0]
+        return FArchiveReader.unpack_i32(self.read(4))[0]
 
     unpack_u32 = struct.Struct("I").unpack
 
     def u32(self) -> int:
-        return FArchiveReader.unpack_u32(self.data.read(4))[0]
+        return FArchiveReader.unpack_u32(self.read(4))[0]
 
     unpack_i64 = struct.Struct("q").unpack
 
     def i64(self) -> int:
-        return FArchiveReader.unpack_i64(self.data.read(8))[0]
+        return FArchiveReader.unpack_i64(self.read(8))[0]
 
     unpack_u64 = struct.Struct("Q").unpack
 
     def u64(self) -> int:
-        return FArchiveReader.unpack_u64(self.data.read(8))[0]
+        return FArchiveReader.unpack_u64(self.read(8))[0]
 
     unpack_float = struct.Struct("f").unpack
 
     def float(self) -> Optional[_float]:
-        val = FArchiveReader.unpack_float(self.data.read(4))[0]
+        val = FArchiveReader.unpack_float(self.read(4))[0]
         if self.allow_nan:
             return val
         if val == math.nan or val == math.inf or val == -math.inf:
@@ -241,7 +246,7 @@ class FArchiveReader:
     unpack_double = struct.Struct("d").unpack
 
     def double(self) -> Optional[_float]:
-        val = FArchiveReader.unpack_double(self.data.read(8))[0]
+        val = FArchiveReader.unpack_double(self.read(8))[0]
         if self.allow_nan:
             return val
         if val == math.nan or val == math.inf or val == -math.inf:
@@ -251,22 +256,22 @@ class FArchiveReader:
     unpack_byte = struct.Struct("B").unpack
 
     def byte(self) -> int:
-        return FArchiveReader.unpack_byte(self.data.read(1))[0]
+        return FArchiveReader.unpack_byte(self.read(1))[0]
 
     def byte_list(self, size: int) -> Sequence[int]:
-        return struct.unpack(str(size) + "B", self.data.read(size))
+        return struct.unpack(str(size) + "B", self.read(size))
 
     def skip(self, size: int) -> None:
-        self.data.read(size)
+        self.pos += size
 
     def guid(self) -> UUID:
         # in the hot loop, avoid function calls
-        return UUID(self.data.read(16))
+        return UUID(self.read(16))
 
     def optional_guid(self) -> Optional[UUID]:
         # in the hot loop, avoid function calls
-        if self.data.read(1)[0]:
-            return UUID(self.data.read(16))
+        if self.read(1)[0]:
+            return UUID(self.read(16))
         return None
 
     def tarray(self, type_reader: Callable[["FArchiveReader"], Any]) -> list[Any]:
