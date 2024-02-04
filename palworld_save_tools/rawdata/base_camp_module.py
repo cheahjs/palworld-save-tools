@@ -23,29 +23,29 @@ def decode(
     for module in module_map:
         module_type = module["key"]
         module_bytes = module["value"]["RawData"]["value"]["values"]
-        print(module_type)
-        print("".join(f"{b:02x}" for b in module_bytes))
-        # module["value"]["RawData"]["value"] = decode_bytes(module_bytes, module_type)
+        module["value"]["RawData"]["value"] = decode_bytes(
+            reader, module_bytes, module_type
+        )
     return value
 
 
-def pal_item_and_slot_read(reader: FArchiveReader) -> dict[str, Any]:
+def pal_item_and_num_read(reader: FArchiveReader) -> dict[str, Any]:
     return {
         "item_id": {
-            # "static_id": reader.fstring(),
-            # "dynamic_id": {
-            "created_world_id": reader.guid(),
-            "local_id_in_created_world": reader.guid(),
-            # }
+            "static_id": reader.fstring(),
+            "dynamic_id": {
+                "created_world_id": reader.guid(),
+                "local_id_in_created_world": reader.guid(),
+            },
         },
-        "slot_id": reader.guid(),
+        "num": reader.u32(),
     }
 
 
 def transport_item_character_info_reader(reader: FArchiveReader) -> dict[str, Any]:
     return {
-        "item_infos": reader.tarray,
-        "character_location": reader.vector_dict,
+        "item_infos": reader.tarray(pal_item_and_num_read),
+        "character_location": reader.vector_dict(),
     }
 
 
@@ -57,12 +57,13 @@ PASSIVE_EFFECT_ENUM = {
 
 
 def module_passive_effect_reader(reader: FArchiveReader) -> dict[str, Any]:
-    data = {}
+    data: dict[str, Any] = {}
     data["type"] = reader.byte()
     if data["type"] not in PASSIVE_EFFECT_ENUM:
         raise Exception(f"Unknown passive effect type {data['type']}")
-    elif data["type"] == 1:
+    elif data["type"] == 2:
         data["work_hard_type"] = reader.byte()
+        data["unknown_trailer"] = [b for b in reader.read(4)]
     return data
 
 
@@ -97,7 +98,7 @@ def decode_bytes(
         return {"values": b_bytes}
 
     if not reader.eof():
-        raise Exception(f"Warning: EOF not reached for {module_type}")
+        print(f"Warning: EOF not reached for {module_type}")
 
     return data
 
@@ -108,14 +109,50 @@ def encode(
     if property_type != "MapProperty":
         raise Exception(f"Expected MapProperty, got {property_type}")
     del properties["custom_type"]
-    # encoded_bytes = encode_bytes(properties["value"])
-    # properties["value"] = {"values": [b for b in encoded_bytes]}
+
+    module_map = properties["value"]
+    for module in module_map:
+        module_type = module["key"]
+        if "values" not in module["value"]["RawData"]["value"]:
+            module["value"]["RawData"]["value"]["values"] = encode_bytes(
+                module["value"]["RawData"]["value"], module_type
+            )
+
     return writer.property_inner(property_type, properties)
 
 
-def encode_bytes(p: dict[str, Any]) -> bytes:
+def pal_item_and_slot_writer(writer: FArchiveWriter, p: dict[str, Any]) -> None:
+    writer.fstring(p["item_id"]["static_id"])
+    writer.guid(p["item_id"]["dynamic_id"]["created_world_id"])
+    writer.guid(p["item_id"]["dynamic_id"]["local_id_in_created_world"])
+    writer.u32(p["num"])
+
+
+def transport_item_character_info_writer(
+    writer: FArchiveWriter, p: dict[str, Any]
+) -> None:
+    writer.tarray(pal_item_and_slot_writer, p["item_infos"])
+    writer.vector_dict(p["character_location"])
+
+
+def module_passive_effect_writer(writer: FArchiveWriter, p: dict[str, Any]) -> None:
+    writer.byte(p["type"])
+    if p["type"] == 2:
+        writer.byte(p["work_hard_type"])
+        writer.write(bytes(p["unknown_trailer"]))
+
+
+def encode_bytes(p: dict[str, Any], module_type: str) -> bytes:
     writer = FArchiveWriter()
-    writer.byte(p["state"])
-    writer.guid(p["id"])
+
+    if module_type in NO_OP_TYPES:
+        pass
+    elif module_type == "EPalBaseCampModuleType::TransportItemDirector":
+        writer.tarray(
+            transport_item_character_info_writer, p["transport_item_character_infos"]
+        )
+    elif module_type == "EPalBaseCampModuleType::PassiveEffect":
+        writer.tarray(module_passive_effect_writer, p["passive_effects"])
+
     encoded_bytes = writer.bytes()
     return encoded_bytes
