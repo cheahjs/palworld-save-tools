@@ -89,4 +89,4 @@ pip install palworld-save-tools
 - [xNul/palworld-host-save-fix](https://github.com/xNul/palworld-host-save-fix/) - Migrating save data between player IDs (eg, converting coop saves to dedicated server saves)
 - [PalEdit](https://github.com/EternalWraith/PalEdit) - GUI for editing Pals
 - [palworld-server-tool](https://github.com/zaigie/palworld-server-tool) - Managing dedicated servers via RCON and SAV file parsing
-- [magicbear/palworld-save-tools](https://github.com/magicbear/palworld-save-tools/tree/clenaup-tools) - Assorted set of SAV file manipulations
+- [palworld-server-toolkit](https://github.com/magicbear/palworld-server-toolkit) - Assorted set of SAV file manipulations
