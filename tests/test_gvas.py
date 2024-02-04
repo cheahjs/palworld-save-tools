@@ -1,5 +1,7 @@
 import base64
 import json
+import os
+import timeit
 import unittest
 
 from parameterized import parameterized
@@ -9,6 +11,8 @@ from palworld_save_tools.gvas import GvasFile, GvasHeader
 from palworld_save_tools.json_tools import CustomEncoder
 from palworld_save_tools.palsav import decompress_sav_to_gvas
 from palworld_save_tools.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
+
+LONG_TESTS = int(os.getenv("LONG_TESTS", "0"))
 
 
 class TestGvas(unittest.TestCase):
@@ -159,4 +163,19 @@ class TestGvas(unittest.TestCase):
             gvas_data,
             new_gvas_data,
             "sav does not match expected after roundtrip",
+        )
+
+    @unittest.skipIf(not LONG_TESTS, "long tests are disabled")
+    def test_benchmark_sav_load(self):
+        with open("tests/testdata/larger-saves/Level.sav", "rb") as f:
+            data = f.read()
+        gvas_data, _ = decompress_sav_to_gvas(data)
+        print(
+            "GvasFile.read benchmark:",
+            timeit.repeat(
+                stmt="GvasFile.read(gvas_data, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES)",
+                number=1,
+                repeat=5,
+                globals=(globals() | locals()),
+            ),
         )
