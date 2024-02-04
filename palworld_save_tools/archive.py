@@ -99,11 +99,22 @@ def uuid_reader(reader: "FArchiveReader") -> UUID:
 
 
 class FArchiveReader:
+    __slots__ = [
+        "data",
+        "size",
+        "pos",
+        "type_hints",
+        "custom_properties",
+        "debug",
+        "allow_nan",
+    ]
+
     data: io.BytesIO
     size: int
     type_hints: dict[str, str]
     custom_properties: dict[str, tuple[Callable, Callable]]
     debug: bool
+    allow_nan: bool
 
     def __init__(
         self,
@@ -582,6 +593,8 @@ def instance_id_writer(writer, d):
 
 
 class FArchiveWriter:
+    __slots__ = ["data", "size", "custom_properties", "debug"]
+
     data: io.BytesIO
     size: int
     custom_properties: dict[str, tuple[Callable, Callable]]
