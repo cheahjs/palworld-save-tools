@@ -3,6 +3,7 @@ from typing import Any, Callable
 from palworld_save_tools.archive import FArchiveReader, FArchiveWriter
 from palworld_save_tools.rawdata import (
     base_camp,
+    base_camp_module,
     build_process,
     character,
     character_container,
@@ -114,7 +115,10 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         work_collection.decode,
         work_collection.encode,
     ),
-    # ".worldSaveData.BaseCampSaveData.Value.ModuleMap": (base_camp_module.decode, base_camp_module.encode),
+    ".worldSaveData.BaseCampSaveData.Value.ModuleMap": (
+        base_camp_module.decode,
+        base_camp_module.encode,
+    ),
     ".worldSaveData.WorkSaveData": (work.decode, work.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.RawData": (debug.decode, debug.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value.RawData": (debug.decode, debug.encode),
