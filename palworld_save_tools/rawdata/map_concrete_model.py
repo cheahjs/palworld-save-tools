@@ -1,7 +1,10 @@
 from typing import Any, Sequence
 
 from palworld_save_tools.archive import *
-from palworld_save_tools.rawdata.common import pal_item_and_num_read
+from palworld_save_tools.rawdata.common import (
+    pal_item_and_num_read,
+    pal_item_and_slot_writer,
+)
 
 # Generate using extract_map_object_concrete_classes.py
 MAP_OBJECT_NAME_TO_CONCRETE_MODEL_CLASS: dict[str, str] = {
@@ -485,6 +488,77 @@ def decode_bytes(
 
 def encode_bytes(p: dict[str, Any]) -> bytes:
     writer = FArchiveWriter()
+
+    map_object_concrete_model = p["concrete_model_type"]
+
+    # Base handling
+    writer.guid(p["instance_id"])
+    writer.guid(p["model_instance_id"])
+
+    if map_object_concrete_model in NO_OP_TYPES:
+        pass
+    elif map_object_concrete_model == "PalMapObjectDeathDroppedCharacterModel":
+        writer.guid(p["stored_parameter_id"])
+        writer.guid(p["owner_player_uid"])
+    elif map_object_concrete_model == "PalMapObjectConvertItemModel":
+        writer.fstring(p["current_recipe_id"])
+        writer.i32(p["remain_product_num"])
+        writer.i32(p["requested_product_num"])
+        writer.float(p["work_speed_additional_rate"])
+    elif map_object_concrete_model == "PalMapObjectPickupItemOnLevelModel":
+        writer.u32(1 if p["auto_picked_up"] else 0)
+    elif map_object_concrete_model == "PalMapObjectDropItemModel":
+        writer.u32(1 if p["auto_picked_up"] else 0)
+        writer.fstring(p["item_id"]["static_id"])
+        writer.guid(p["item_id"]["dynamic_id"]["created_world_id"])
+        writer.guid(p["item_id"]["dynamic_id"]["local_id_in_created_world"])
+    elif map_object_concrete_model == "PalMapObjectItemDropOnDamagModel":
+        writer.tarray(pal_item_and_slot_writer, p["drop_item_infos"])
+    elif map_object_concrete_model == "PalMapObjectDeathPenaltyStorageModel":
+        writer.guid(p["owner_player_uid"])
+    elif map_object_concrete_model == "PalMapObjectDefenseBulletLauncherModel":
+        writer.i32(p["remaining_bullets"])
+        writer.i32(p["magazine_size"])
+        writer.fstring(p["bullet_item_name"])
+    elif map_object_concrete_model == "PalMapObjectGenerateEnergyModel":
+        writer.float(p["stored_energy_amount"])
+    elif map_object_concrete_model == "PalMapObjectFarmBlockV2Model":
+        writer.fstring(p["crop_data_id"])
+        writer.byte(p["current_state"])
+        writer.float(p["crop_progress_rate_value"])
+        writer.float(p["water_stack_rate_value"])
+        if "state_machine" in p:
+            writer.float(p["state_machine"]["growup_required_time"])
+            writer.float(p["state_machine"]["growup_progress_time"])
+    elif map_object_concrete_model == "PalMapObjectFastTravelPointModel":
+        writer.guid(p["location_instance_id"])
+    elif map_object_concrete_model == "PalMapObjectShippingItemModel":
+        writer.tarray(lambda w, x: w.i32(x), p["shipping_hours"])
+    elif map_object_concrete_model == "PalMapObjectProductItemModel":
+        writer.float(p["work_speed_additional_rate"])
+        writer.fstring(p["product_item_id"])
+    elif map_object_concrete_model == "PalMapObjectRecoverOtomoModel":
+        writer.float(p["recover_amount_by_sec"])
+    elif map_object_concrete_model == "PalMapObjectHatchingEggModel":
+        writer.properties(p["hatched_character_save_parameter"])
+        writer.u32(p["unknown_bytes"])
+        writer.guid(p["hatched_character_guid"])
+    elif map_object_concrete_model == "PalMapObjectTreasureBoxModel":
+        writer.byte(p["treasure_grade_type"])
+    elif map_object_concrete_model == "PalMapObjectBreedFarmModel":
+        writer.tarray(lambda w, x: w.guid(x), p["spawned_egg_instance_ids"])
+    elif map_object_concrete_model == "PalMapObjectSignboardModel":
+        writer.fstring(p["signboard_text"])
+    elif map_object_concrete_model == "PalMapObjectTorchModel":
+        writer.i64(p["extinction_date_time"])
+    elif map_object_concrete_model == "PalMapObjectPalEggModel":
+        writer.u32(p["unknown_bytes"])
+    elif map_object_concrete_model == "PalMapObjectBaseCampPoint":
+        writer.guid(p["base_camp_id"])
+    else:
+        raise Exception(
+            f"Unknown map object concrete model {map_object_concrete_model}"
+        )
 
     encoded_bytes = writer.bytes()
     return encoded_bytes

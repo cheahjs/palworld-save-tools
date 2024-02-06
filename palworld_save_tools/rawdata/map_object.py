@@ -56,6 +56,41 @@ def encode(
     if property_type != "ArrayProperty":
         raise Exception(f"Expected ArrayProperty, got {property_type}")
     del properties["custom_type"]
-    encoded_bytes = encode_bytes(properties["value"])
-    properties["value"] = {"values": [b for b in encoded_bytes]}
+
+    for map_object in properties["value"]["values"]:
+        # Encode Model
+        if "values" not in map_object["Model"]["value"]["RawData"]["value"]:
+            map_object["Model"]["value"]["RawData"]["value"] = {
+                "values": map_model.encode_bytes(
+                    map_object["Model"]["value"]["RawData"]["value"]
+                )
+            }
+        # Encode Model.Connector
+        if (
+            "values"
+            not in map_object["Model"]["value"]["Connector"]["value"]["RawData"][
+                "value"
+            ]
+        ):
+            connector.encode_bytes(
+                map_object["Model"]["value"]["Connector"]["value"]["RawData"]["value"],
+            )
+        # Encode Model.BuildProcess
+        if (
+            "values"
+            not in map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"][
+                "value"
+            ]
+        ):
+            build_process.encode_bytes(
+                map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"][
+                    "value"
+                ],
+            )
+        # Encode ConcreteModel
+        if "values" not in map_object["ConcreteModel"]["value"]["RawData"]["value"]:
+            map_concrete_model.encode_bytes(
+                map_object["ConcreteModel"]["value"]["RawData"]["value"],
+            )
+
     return writer.property_inner(property_type, properties)
