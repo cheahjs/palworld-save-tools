@@ -59,14 +59,19 @@ def encode(
 
     for map_object in properties["value"]["values"]:
         # Encode Model
-        if "values" not in map_object["Model"]["value"]["RawData"]["value"]:
+        if (
+            map_object["Model"]["value"]["RawData"]["value"] is not None
+            and "values" not in map_object["Model"]["value"]["RawData"]["value"]
+        ):
             map_object["Model"]["value"]["RawData"]["value"] = {
                 "values": map_model.encode_bytes(
                     map_object["Model"]["value"]["RawData"]["value"]
                 )
             }
         # Encode Model.Connector
-        if (
+        if map_object["Model"]["value"]["Connector"]["value"]["RawData"][
+            "value"
+        ] is not None and (
             "values"
             not in map_object["Model"]["value"]["Connector"]["value"]["RawData"][
                 "value"
@@ -77,7 +82,9 @@ def encode(
             )
         # Encode Model.BuildProcess
         if (
-            "values"
+            map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"]["value"]
+            is not None
+            and "values"
             not in map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"][
                 "value"
             ]
@@ -88,7 +95,10 @@ def encode(
                 ],
             )
         # Encode ConcreteModel
-        if "values" not in map_object["ConcreteModel"]["value"]["RawData"]["value"]:
+        if (
+            map_object["ConcreteModel"]["value"]["RawData"]["value"] is not None
+            and "values" not in map_object["ConcreteModel"]["value"]["RawData"]["value"]
+        ):
             map_concrete_model.encode_bytes(
                 map_object["ConcreteModel"]["value"]["RawData"]["value"],
             )
