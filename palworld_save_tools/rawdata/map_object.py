@@ -5,6 +5,7 @@ from palworld_save_tools.rawdata import (
     build_process,
     connector,
     map_concrete_model,
+    map_concrete_model_module,
     map_model,
 )
 
@@ -47,6 +48,17 @@ def decode(
                 map_object_id,
             )
         )
+        # Decode ConcreteModel.ModuleMap
+        for module in map_object["ConcreteModel"]["value"]["ModuleMap"]["value"]:
+            module_type = module["key"]
+            module_bytes = module["value"]["RawData"]["value"]["values"]
+            module["value"]["RawData"]["value"] = (
+                map_concrete_model_module.decode_bytes(
+                    reader,
+                    module_bytes,
+                    module_type,
+                )
+            )
     return value
 
 
@@ -102,5 +114,15 @@ def encode(
                     map_object["ConcreteModel"]["value"]["RawData"]["value"],
                 )
             }
+        # Encode ConcreteModel.ModuleMap
+        for module in map_object["ConcreteModel"]["value"]["ModuleMap"]["value"]:
+            if "values" not in module["value"]["RawData"]["value"]:
+                module_type = module["key"]
+                module["value"]["RawData"]["value"] = {
+                    "values": map_concrete_model_module.encode_bytes(
+                        module["value"]["RawData"]["value"],
+                        module_type,
+                    )
+                }
 
     return writer.property_inner(property_type, properties)
