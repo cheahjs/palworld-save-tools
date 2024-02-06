@@ -375,7 +375,7 @@ def decode_bytes(
     parent_reader: FArchiveReader, m_bytes: Sequence[int], object_id: str
 ) -> Optional[dict[str, Any]]:
     if len(m_bytes) == 0:
-        return None
+        return {"values": []}
     reader = parent_reader.internal_copy(bytes(m_bytes), debug=False)
     data: dict[str, Any] = {}
 
