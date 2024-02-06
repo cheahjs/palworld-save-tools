@@ -4,19 +4,14 @@ from palworld_save_tools.archive import FArchiveReader, FArchiveWriter
 from palworld_save_tools.rawdata import (
     base_camp,
     base_camp_module,
-    build_process,
     character,
     character_container,
-    connector,
-    debug,
     dynamic_item,
     foliage_model,
     foliage_model_instance,
     group,
     item_container,
     item_container_slots,
-    map_concrete_model,
-    map_model,
     map_object,
     work,
     work_collection,
@@ -80,7 +75,6 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         character_container.decode,
         character_container.encode,
     ),
-    # DynamicItemSaveData is problematic because serialisation is dependent on type, which is not immediately obvious
     ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData": (
         dynamic_item.decode,
         dynamic_item.encode,
@@ -114,25 +108,4 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         map_object.decode,
         map_object.encode,
     ),
-    # ".worldSaveData.WorkSaveData.WorkSaveData.RawData": (debug.decode, debug.encode),
-    # ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value.RawData": (debug.decode, debug.encode),
-    # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
-    #     map_concrete_model.decode,
-    #     map_concrete_model.encode,
-    # ),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.BuildProcess.RawData": (
-    #     build_process.decode,
-    #     build_process.encode,
-    # ),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (
-    #     connector.decode,
-    #     connector.encode,
-    # ),
-    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (
-    #     map_model.decode,
-    #     map_model.encode,
-    # ),
 }
