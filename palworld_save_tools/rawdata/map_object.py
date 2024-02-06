@@ -77,9 +77,13 @@ def encode(
                 "value"
             ]
         ):
-            connector.encode_bytes(
-                map_object["Model"]["value"]["Connector"]["value"]["RawData"]["value"],
-            )
+            map_object["Model"]["value"]["Connector"]["value"]["RawData"]["value"] = {
+                "values": connector.encode_bytes(
+                    map_object["Model"]["value"]["Connector"]["value"]["RawData"][
+                        "value"
+                    ],
+                )
+            }
         # Encode Model.BuildProcess
         if (
             map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"]["value"]
@@ -89,18 +93,24 @@ def encode(
                 "value"
             ]
         ):
-            build_process.encode_bytes(
-                map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"][
-                    "value"
-                ],
-            )
+            map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"][
+                "value"
+            ] = {
+                "values": build_process.encode_bytes(
+                    map_object["Model"]["value"]["BuildProcess"]["value"]["RawData"][
+                        "value"
+                    ],
+                )
+            }
         # Encode ConcreteModel
         if (
             map_object["ConcreteModel"]["value"]["RawData"]["value"] is not None
             and "values" not in map_object["ConcreteModel"]["value"]["RawData"]["value"]
         ):
-            map_concrete_model.encode_bytes(
-                map_object["ConcreteModel"]["value"]["RawData"]["value"],
-            )
+            map_object["ConcreteModel"]["value"]["RawData"]["value"] = {
+                "values": map_concrete_model.encode_bytes(
+                    map_object["ConcreteModel"]["value"]["RawData"]["value"],
+                )
+            }
 
     return writer.property_inner(property_type, properties)
