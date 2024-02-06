@@ -15,7 +15,9 @@ from palworld_save_tools.rawdata import (
     group,
     item_container,
     item_container_slots,
+    map_concrete_model,
     map_model,
+    map_object,
     work,
     work_collection,
     worker_director,
@@ -63,18 +65,6 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         character.decode,
         character.encode,
     ),
-    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.BuildProcess.RawData": (
-        build_process.decode,
-        build_process.encode,
-    ),
-    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (
-        connector.decode,
-        connector.encode,
-    ),
-    ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (
-        map_model.decode,
-        map_model.encode,
-    ),
     ".worldSaveData.ItemContainerSaveData.Value.RawData": (
         item_container.decode,
         item_container.encode,
@@ -120,13 +110,29 @@ PALWORLD_CUSTOM_PROPERTIES: dict[
         base_camp_module.encode,
     ),
     ".worldSaveData.WorkSaveData": (work.decode, work.encode),
+    ".worldSaveData.MapObjectSaveData": (
+        map_object.decode,
+        map_object.encode,
+    ),
     # ".worldSaveData.WorkSaveData.WorkSaveData.RawData": (debug.decode, debug.encode),
     # ".worldSaveData.WorkSaveData.WorkSaveData.WorkAssignMap.Value.RawData": (debug.decode, debug.encode),
     # ConcreteModel is problematic because serialisation is dependent on type, which is not immediately obvious
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel": (
-    #     decode_map_concrete_model,
-    #     encode_map_concrete_model,
+    #     map_concrete_model.decode,
+    #     map_concrete_model.encode,
     # ),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.RawData": (),
     # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.ConcreteModel.ModuleMap.Value.RawData": (),
+    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.BuildProcess.RawData": (
+    #     build_process.decode,
+    #     build_process.encode,
+    # ),
+    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Connector.RawData": (
+    #     connector.decode,
+    #     connector.encode,
+    # ),
+    # ".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.RawData": (
+    #     map_model.decode,
+    #     map_model.encode,
+    # ),
 }

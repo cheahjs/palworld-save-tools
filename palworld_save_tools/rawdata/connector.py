@@ -30,7 +30,7 @@ def decode_bytes(
     parent_reader: FArchiveReader, c_bytes: Sequence[int]
 ) -> Optional[dict[str, Any]]:
     if len(c_bytes) == 0:
-        return None
+        return {"values": []}
     reader = parent_reader.internal_copy(bytes(c_bytes), debug=False)
     data: dict[str, Any] = {
         "supported_level": reader.i32(),
