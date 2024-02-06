@@ -54,6 +54,9 @@ Additional command line arguments:
 1. `--output`: Override the default output path
 1. `--minify-json`: Minify output JSON to help speed up processing by other tools consuming JSON
 1. `--force`: Overwrite output files if they exist without prompting
+1. `--custom-properties`: Comma-separated list of paths from [paltypes.py](./palworld_save_tools/paltypes.py) to decode.
+This can be used to ignore processing of types that are not of interest.
+For example `--custom-properties .worldSaveData.GroupSaveDataMap,.worldSaveData.CharacterSaveParameterMap.Value.RawData` will only parse guild data and character data.
 
 ## Developers
 

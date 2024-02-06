@@ -42,6 +42,13 @@ def main():
         action="store_true",
         help="Convert NaN/Inf/-Inf floats to null when converting from SAV to JSON. This will lose information in the event Inf/-Inf is in the sav file (default: false)",
     )
+    parser.add_argument(
+        "--custom-properties",
+        default=",".join(PALWORLD_CUSTOM_PROPERTIES.keys()),
+        type=lambda t: [s.strip() for s in t.split(",")],
+        help="Comma-separated list of custom properties to decode, or 'all' for all known properties. This can be used to speed up processing by excluding properties that are not of interest. (default: all)",
+    )
+
     parser.add_argument("--minify-json", action="store_true", help="Minify JSON output")
     args = parser.parse_args()
 
@@ -67,6 +74,7 @@ def main():
             force=args.force,
             minify=args.minify_json,
             allow_nan=(not args.convert_nan_to_null),
+            custom_properties_keys=args.custom_properties,
         )
 
     if args.from_json or args.filename.endswith(".json"):
@@ -78,7 +86,12 @@ def main():
 
 
 def convert_sav_to_json(
-    filename, output_path, force=False, minify=False, allow_nan=True
+    filename,
+    output_path,
+    force=False,
+    minify=False,
+    allow_nan=True,
+    custom_properties_keys=["all"],
 ):
     print(f"Converting {filename} to JSON, saving to {output_path}")
     if os.path.exists(output_path):
@@ -91,8 +104,15 @@ def convert_sav_to_json(
         data = f.read()
         raw_gvas, _ = decompress_sav_to_gvas(data)
     print(f"Loading GVAS file")
+    custom_properties = {}
+    if len(custom_properties) > 0 and custom_properties_keys[0] == "all":
+        custom_properties = PALWORLD_CUSTOM_PROPERTIES
+    else:
+        for prop in PALWORLD_CUSTOM_PROPERTIES:
+            if prop in custom_properties_keys:
+                custom_properties[prop] = PALWORLD_CUSTOM_PROPERTIES[prop]
     gvas_file = GvasFile.read(
-        raw_gvas, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES, allow_nan=allow_nan
+        raw_gvas, PALWORLD_TYPE_HINTS, custom_properties, allow_nan=allow_nan
     )
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:
