@@ -486,7 +486,10 @@ def decode_bytes(
 #     return writer.property_inner(property_type, properties)
 
 
-def encode_bytes(p: dict[str, Any]) -> bytes:
+def encode_bytes(p: Optional[dict[str, Any]]) -> bytes:
+    if p is None:
+        return b""
+
     writer = FArchiveWriter()
 
     map_object_concrete_model = p["concrete_model_type"]
