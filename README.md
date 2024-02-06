@@ -1,24 +1,19 @@
 # palworld-save-tools
 Tools for converting Palworld .sav files to JSON and back.
 
-This tool currently supports additional parsing of the following data in the `Level.sav` not handled by `uesave` or other non-Palworld aware Unreal save editors:
+This tool currently supports additional parsing of the following data in the `Level.sav` not handled by `uesave` or other non-Palworld aware Unreal save editors, emcompassing all known data structures as of Palworld v0.1.4.0:
 
 1. `GroupSaveDataMap`
     - Groups such as in-game organizations and guilds
 1. `CharacterSaveParameterMap`
     - Characters such as players and pals
-1. `MapObjectSaveData.MapObjectSaveData.Model`
+1. `MapObjectSaveData`
 1. `ItemContainerSaveData`
 1. `CharacterContainerSaveData`
 1. `DynamicItemSaveData`
 1. `FoliageGridSaveDataMap`
 1. `BaseCampSaveData`
 1. `WorkSaveData`
-
-Some fields that are not currently parsed:
-
-1. `BaseCampSaveData.Value.ModuleMap`
-1. `MapObjectSaveData.MapObjectSaveData.ConcreteModel`
 
 ## Instructions
 
