@@ -80,7 +80,7 @@ class UUID:
         return "%s.UUID('%s')" % (self.__module__, str(self))
 
     def __hash__(self) -> int:
-        return hash(self.raw_bytes)
+        return hash(str(self))
 
 
 # Specify a type for JSON-serializable objects
