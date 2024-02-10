@@ -4,25 +4,17 @@ import os
 import struct
 import uuid
 from typing import Any, Callable, Optional, Sequence, Union
+from recordclass import dataobject, as_dataclass
 
 # Alias stdlib types to avoid name conflicts
 _float = float
 _bytes = bytes
 
-
+@as_dataclass(hashable=True, fast_new=True)
 class UUID:
-    """Wrapper around uuid.UUID to delay evaluation of UUIDs until necessary"""
-
-    __slots__ = ("raw_bytes", "parsed_uuid", "parsed_str")
     raw_bytes: bytes
-    parsed_uuid: Optional[uuid.UUID]
-    parsed_str: Optional[str]
-
-    def __init__(self, raw_bytes: bytes) -> None:
-        self.raw_bytes = raw_bytes
-        self.parsed_uuid = None
-        self.parsed_str = None
-
+    """Wrapper around uuid.UUID to delay evaluation of UUIDs until necessary"""
+    
     @staticmethod
     def from_str(s: str) -> "UUID":
         b = uuid.UUID(s).bytes
@@ -50,36 +42,32 @@ class UUID:
         )
 
     def __str__(self) -> str:
-        if not self.parsed_str:
-            b = self.raw_bytes
-            self.parsed_str = "%08x-%04x-%04x-%04x-%04x%08x" % ((b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0]),
+        b = self.raw_bytes
+        return "%08x-%04x-%04x-%04x-%04x%08x" % ((b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0]),
                                  (b[7] << 8) | (b[6]), (b[5] << 8) | (b[4]), (b[0xB] << 8) | (b[0xA]),
                                  (b[9] << 8) | (b[8]), (b[0xF] << 24) | (b[0xE] << 16) | (b[0xD] << 8) | (b[0xC]))
-        return self.parsed_str
 
     def UUID(self) -> uuid.UUID:
-        if not self.parsed_uuid:
-            b = self.raw_bytes
-            uuid_int = (
-                b[0xC]
-                + (b[0xD] << 8)
-                + (b[0xE] << 16)
-                + (b[0xF] << 24)
-                + (b[0x8] << 32)
-                + (b[0x9] << 40)
-                + (b[0xA] << 48)
-                + (b[0xB] << 56)
-                + (b[0x4] << 64)
-                + (b[0x5] << 72)
-                + (b[0x6] << 80)
-                + (b[0x7] << 88)
-                + (b[0x0] << 96)
-                + (b[0x1] << 104)
-                + (b[0x2] << 112)
-                + (b[0x3] << 120)
-            )
-            self.parsed_uuid = uuid.UUID(int=uuid_int)
-        return self.parsed_uuid
+        b = self.raw_bytes
+        uuid_int = (
+            b[0xC]
+            + (b[0xD] << 8)
+            + (b[0xE] << 16)
+            + (b[0xF] << 24)
+            + (b[0x8] << 32)
+            + (b[0x9] << 40)
+            + (b[0xA] << 48)
+            + (b[0xB] << 56)
+            + (b[0x4] << 64)
+            + (b[0x5] << 72)
+            + (b[0x6] << 80)
+            + (b[0x7] << 88)
+            + (b[0x0] << 96)
+            + (b[0x1] << 104)
+            + (b[0x2] << 112)
+            + (b[0x3] << 120)
+        )
+        return uuid.UUID(int=uuid_int)
 
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, UUID):
@@ -88,9 +76,6 @@ class UUID:
 
     def __repr__(self) -> str:
         return "%s.UUID('%s')" % (self.__module__, str(self))
-
-    def __hash__(self) -> int:
-        return hash(str(self))
 
 
 # Specify a type for JSON-serializable objects

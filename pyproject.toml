@@ -16,6 +16,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dynamic = ["version"]
+dependencies = [
+    "recordclass"
+]
 
 [project.urls]
 Homepage = "https://github.com/cheahjs/palworld-save-tools"
