@@ -105,7 +105,7 @@ def convert_sav_to_json(
         raw_gvas, _ = decompress_sav_to_gvas(data)
     print(f"Loading GVAS file")
     custom_properties = {}
-    if len(custom_properties) > 0 and custom_properties_keys[0] == "all":
+    if len(custom_properties_keys) > 0 and custom_properties_keys[0] == "all":
         custom_properties = PALWORLD_CUSTOM_PROPERTIES
     else:
         for prop in PALWORLD_CUSTOM_PROPERTIES:
