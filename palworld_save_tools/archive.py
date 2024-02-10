@@ -72,6 +72,8 @@ class UUID:
         return str(self.parsed_uuid)
 
     def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, UUID):
+            return self.raw_bytes == __value.raw_bytes
         return str(self) == str(__value)
 
     def __repr__(self) -> str:
