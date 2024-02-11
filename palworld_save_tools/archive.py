@@ -42,10 +42,10 @@ class UUID:
         )
 
     def __str__(self) -> str:
-        b = self.raw_bytes
         return "%08x-%04x-%04x-%04x-%04x%08x" % ((b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0]),
-                                 (b[7] << 8) | (b[6]), (b[5] << 8) | (b[4]), (b[0xB] << 8) | (b[0xA]),
-                                 (b[9] << 8) | (b[8]), (b[0xF] << 24) | (b[0xE] << 16) | (b[0xD] << 8) | (b[0xC]))
+                                                 (b[7] << 8) | (b[6]), (b[5] << 8) | (b[4]), (b[0xB] << 8) | (b[0xA]),
+                                                 (b[9] << 8) | (b[8]),
+                                                 (b[0xF] << 24) | (b[0xE] << 16) | (b[0xD] << 8) | (b[0xC]))
 
     def UUID(self) -> uuid.UUID:
         b = self.raw_bytes
