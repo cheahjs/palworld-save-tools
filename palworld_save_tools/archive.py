@@ -52,9 +52,14 @@ class UUID:
     def __str__(self) -> str:
         if not self.parsed_str:
             b = self.raw_bytes
-            self.parsed_str = "%08x-%04x-%04x-%04x-%04x%08x" % ((b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0]),
-                                 (b[7] << 8) | (b[6]), (b[5] << 8) | (b[4]), (b[0xB] << 8) | (b[0xA]),
-                                 (b[9] << 8) | (b[8]), (b[0xF] << 24) | (b[0xE] << 16) | (b[0xD] << 8) | (b[0xC]))
+            self.parsed_str = "%08x-%04x-%04x-%04x-%04x%08x" % (
+                (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0]),
+                (b[7] << 8) | (b[6]),
+                (b[5] << 8) | (b[4]),
+                (b[0xB] << 8) | (b[0xA]),
+                (b[9] << 8) | (b[8]),
+                (b[0xF] << 24) | (b[0xE] << 16) | (b[0xD] << 8) | (b[0xC]),
+            )
         return self.parsed_str
 
     def UUID(self) -> uuid.UUID:
