@@ -18,6 +18,7 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', 'pypy3.9', 'pypy3.10']
         os: [ubuntu-latest, windows-latest]
+        force-stdlib: [true, false]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +28,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dev dependencies
         run: |
-          pip install -r requirements-dev.txt
-      - name: Run tests
+          pip install '.[tests]'
+      - name: Install performance dependencies
+        if: ${{ !matrix.force-stdlib }}
+        run: |
+          pip install '.[performance]'
+      - name: Run tests (with performance dependencies)
+        if: ${{ !matrix.force-stdlib }}
+        run: |
+          python -m unittest -v
+      - name: Run tests (stdlib only)
+        if: ${{ matrix.force-stdlib }}
+        env:
+          FORCE_STDLIB_ONLY: 1
         run: |
           python -m unittest -v
