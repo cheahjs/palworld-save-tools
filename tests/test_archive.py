@@ -36,7 +36,7 @@ class TestArchive(unittest.TestCase):
         self.assertEqual(y, y_e)
         self.assertEqual(z, z_e)
 
-    def test_uuid_wrapper(self):
+    def test_uuid_wrapper_matches_stdlib(self):
         test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
         expected = uuid.UUID(test_uuid)
         b = expected.bytes
@@ -62,3 +62,34 @@ class TestArchive(unittest.TestCase):
         )
         wrapper = UUID(ue_bytes)
         self.assertEqual(str(expected), str(wrapper))
+
+    def test_uuid_wrapper_can_be_used_as_dict_key(self):
+        test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
+        wrapper = UUID.from_str(test_uuid)
+        d = {wrapper: "test"}
+        self.assertEqual("test", d[wrapper])
+
+    def test_uuid_wrapper_can_be_used_as_set_member(self):
+        test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
+        wrapper = UUID.from_str(test_uuid)
+        s = {wrapper}
+        self.assertEqual(1, len(s))
+        self.assertTrue(wrapper in s)
+
+    def test_uuid_wrapper_equality(self):
+        test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
+        wrapper = UUID.from_str(test_uuid)
+        wrapper2 = UUID.from_str(test_uuid)
+        self.assertEqual(wrapper, wrapper2)
+
+    def test_uuid_wrapper_inequality(self):
+        test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
+        wrapper = UUID.from_str(test_uuid)
+        wrapper2 = UUID.from_str("c1b41f12-90d3-491f-be71-b34e8e0deb5b")
+        self.assertNotEqual(wrapper, wrapper2)
+
+    def test_uuid_wrapper_hash(self):
+        test_uuid = "c1b41f12-90d3-491f-be71-b34e8e0deb5a"
+        wrapper = UUID.from_str(test_uuid)
+        wrapper2 = UUID.from_str(test_uuid)
+        self.assertEqual(hash(wrapper), hash(wrapper2))

@@ -1,7 +1,7 @@
 # palworld-save-tools
 Tools for converting Palworld .sav files to JSON and back.
 
-This tool currently supports additional parsing of the following data in the `Level.sav` not handled by `uesave` or other non-Palworld aware Unreal save editors, emcompassing all known data structures as of Palworld v0.1.4.0:
+This tool currently supports additional parsing of the following data in the `Level.sav` not handled by `uesave` or other non-Palworld aware Unreal save editors, emcompassing almost all known data structures as of Palworld v0.1.4.0:
 
 1. `GroupSaveDataMap`
     - Groups such as in-game organizations and guilds
@@ -77,6 +77,7 @@ pip install palworld-save-tools
 ## Development philosophy
 
 - No additional dependencies. Scripts should run with a default install of Python. Distributing binary builds of Python is laden with AV false positives.
+    - Optional dependencies are allowed, for example switching out the stdlib's JSON library for something more performant.
 - Correctness of the conversion process is more important than performance. SAV > JSON > SAV should yield bit-for-bit identical files (pre-compression).
 
 ## Projects that make use of palworld-save-tools
