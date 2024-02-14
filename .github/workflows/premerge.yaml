@@ -19,6 +19,12 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12', 'pypy3.9', 'pypy3.10']
         os: [ubuntu-latest, windows-latest]
         force-stdlib: [true, false]
+        exclude:
+          # all the "performance" libs tend to break on pypy
+          - python-version: 'pypy3.9'
+            force-stdlib: false
+          - python-version: 'pypy3.10'
+            force-stdlib: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
