@@ -179,6 +179,11 @@ else:
                 return self.raw_bytes == __value.raw_bytes
             return str(self) == str(__value)
 
+        def __ne__(self, __value: object) -> bool:
+            if isinstance(__value, UUID):
+                return self.raw_bytes != __value.raw_bytes
+            return str(self) != str(__value)
+
         def __repr__(self) -> str:
             return "%s.UUID('%s')" % (self.__module__, str(self))
 
