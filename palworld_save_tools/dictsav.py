@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-
-import os
 from typing import Any, Dict
 
 from palworld_save_tools.gvas import GvasFile
@@ -47,10 +44,3 @@ def write_dict_to_sav(pal_dict: Dict[str, Any], output_path):
     print(f"Writing SAV file to {output_path}")
     with open(output_path, "wb") as f:
         f.write(sav_file)
-
-
-def confirm_prompt(question: str) -> bool:
-    reply = None
-    while reply not in ("y", "n"):
-        reply = input(f"{question} (y/n): ").casefold()
-    return reply == "y"

@@ -6,7 +6,7 @@ import os
 
 from palworld_save_tools.json_tools import CustomEncoder
 from palworld_save_tools.paltypes import PALWORLD_CUSTOM_PROPERTIES
-from palworld_save_tools.dictsav import read_sav_to_dict, write_dict_to_sav, confirm_prompt
+from palworld_save_tools.dictsav import read_sav_to_dict, write_dict_to_sav
 
 
 def main():
@@ -98,7 +98,7 @@ def convert_sav_to_json(
         if not force:
             if not confirm_prompt("Are you sure you want to continue?"):
                 exit(1)
-    pal_dict = read_sav_to_dict(filename)
+    pal_dict = read_sav_to_dict(filename, allow_nan=allow_nan, custom_properties_keys=custom_properties_keys)
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:
         indent = None if minify else "\t"
@@ -108,7 +108,6 @@ def convert_sav_to_json(
             indent=indent,
             cls=CustomEncoder,
             allow_nan=allow_nan,
-            custom_properties_keys=custom_properties_keys,
         )
 
 
@@ -123,6 +122,13 @@ def convert_json_to_sav(filename, output_path, force=False):
     with open(filename, "r", encoding="utf8") as f:
         pal_dict = json.load(f)
     write_dict_to_sav(pal_dict, output_path)
+
+
+def confirm_prompt(question: str) -> bool:
+    reply = None
+    while reply not in ("y", "n"):
+        reply = input(f"{question} (y/n): ").casefold()
+    return reply == "y"
 
 
 if __name__ == "__main__":
