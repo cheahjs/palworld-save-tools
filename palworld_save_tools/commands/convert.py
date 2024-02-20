@@ -4,10 +4,9 @@ import argparse
 import json
 import os
 
-from palworld_save_tools.gvas import GvasFile
 from palworld_save_tools.json_tools import CustomEncoder
-from palworld_save_tools.palsav import compress_gvas_to_sav, decompress_sav_to_gvas
-from palworld_save_tools.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
+from palworld_save_tools.paltypes import PALWORLD_CUSTOM_PROPERTIES
+from palworld_save_tools.dictsav import read_sav_to_dict, write_dict_to_sav, confirm_prompt
 
 
 def main():
@@ -99,26 +98,17 @@ def convert_sav_to_json(
         if not force:
             if not confirm_prompt("Are you sure you want to continue?"):
                 exit(1)
-    print(f"Decompressing sav file")
-    with open(filename, "rb") as f:
-        data = f.read()
-        raw_gvas, _ = decompress_sav_to_gvas(data)
-    print(f"Loading GVAS file")
-    custom_properties = {}
-    if len(custom_properties_keys) > 0 and custom_properties_keys[0] == "all":
-        custom_properties = PALWORLD_CUSTOM_PROPERTIES
-    else:
-        for prop in PALWORLD_CUSTOM_PROPERTIES:
-            if prop in custom_properties_keys:
-                custom_properties[prop] = PALWORLD_CUSTOM_PROPERTIES[prop]
-    gvas_file = GvasFile.read(
-        raw_gvas, PALWORLD_TYPE_HINTS, custom_properties, allow_nan=allow_nan
-    )
+    pal_dict = read_sav_to_dict(filename)
     print(f"Writing JSON to {output_path}")
     with open(output_path, "w", encoding="utf8") as f:
         indent = None if minify else "\t"
         json.dump(
-            gvas_file.dump(), f, indent=indent, cls=CustomEncoder, allow_nan=allow_nan
+            pal_dict,
+            f,
+            indent=indent,
+            cls=CustomEncoder,
+            allow_nan=allow_nan,
+            custom_properties_keys=custom_properties_keys,
         )
 
 
@@ -131,29 +121,8 @@ def convert_json_to_sav(filename, output_path, force=False):
                 exit(1)
     print(f"Loading JSON from {filename}")
     with open(filename, "r", encoding="utf8") as f:
-        data = json.load(f)
-    gvas_file = GvasFile.load(data)
-    print(f"Compressing SAV file")
-    if (
-        "Pal.PalWorldSaveGame" in gvas_file.header.save_game_class_name
-        or "Pal.PalLocalWorldSaveGame" in gvas_file.header.save_game_class_name
-    ):
-        save_type = 0x32
-    else:
-        save_type = 0x31
-    sav_file = compress_gvas_to_sav(
-        gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type
-    )
-    print(f"Writing SAV file to {output_path}")
-    with open(output_path, "wb") as f:
-        f.write(sav_file)
-
-
-def confirm_prompt(question: str) -> bool:
-    reply = None
-    while reply not in ("y", "n"):
-        reply = input(f"{question} (y/n): ").casefold()
-    return reply == "y"
+        pal_dict = json.load(f)
+    write_dict_to_sav(pal_dict, output_path)
 
 
 if __name__ == "__main__":
