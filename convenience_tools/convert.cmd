@@ -19,7 +19,7 @@ for %%A in (python3 python py) do (
         echo Found Python at %%A
         echo Python version:
         %%A --version
-        %%A convert.py "%~1"
+        %%A convert.py %*
         goto :Found
     )
 )
