@@ -18,7 +18,8 @@ jobs:
           python-version: 3.12
       - name: Install dependencies
         run: |
-          pip install -r requirements-dev.txt
+          pip install '.[performance]'
+          pip install '.[tests]'
           pip install hatch
       - name: Build package
         run: hatch build
