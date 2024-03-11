@@ -4,7 +4,6 @@ import struct
 import uuid
 from typing import Any, Callable, Optional, Union
 
-
 def instance_id_reader(reader: "FArchiveReader"):
     return {
         "guid": reader.guid(),
@@ -96,14 +95,6 @@ class FArchiveReader:
         if size == 0:
             return ""
 
-        mask = 0xFF
-        if size > mask:
-            # This must be unusual, but this may be different in the future
-            print(
-                "Unusual size %s " % hex(size)
-            )
-            size = size & mask
-
         data: bytes
         encoding: str
         if LoadUCS2Char:
@@ -136,10 +127,28 @@ class FArchiveReader:
         return struct.unpack("H", self.data.read(2))[0]
 
     def i32(self) -> int:
-        return struct.unpack("i", self.data.read(4))[0]
+        size = struct.unpack("i", self.data.read(4))[0]
+        for i in [8,16,24]:
+            if (size >> i) & 0xFF == 0x80:
+                # This must be unusual, but this may be different in the future
+                print(
+                    "Unusual i32 %s " % hex(size)
+                )
+                size = size - (0x80 << i)
+
+        return size
 
     def u32(self) -> int:
-        return struct.unpack("I", self.data.read(4))[0]
+        size = struct.unpack("I", self.data.read(4))[0]
+        for i in [8,16,24]:
+            if (size >> i) & 0xFF == 0x80:
+                # This must be unusual, but this may be different in the future
+                print(
+                    "Unusual u32 %s " % hex(size)
+                )
+                size = size - (0x80 << i)
+
+        return size
 
     def i64(self) -> int:
         return struct.unpack("q", self.data.read(8))[0]
