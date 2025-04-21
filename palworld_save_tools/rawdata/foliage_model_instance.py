@@ -37,7 +37,7 @@ def decode_bytes(
     }
     data["hp"] = reader.i32()
     if not reader.eof():
-        raise Exception("Warning: EOF not reached")
+        data["trailing_unparsed_data"] = [b for b in reader.read_to_end()]
     return data
 
 
@@ -69,6 +69,7 @@ def encode_bytes(p: dict[str, Any]) -> bytes:
     )
     writer.float(p["world_transform"]["scale_x"])
     writer.i32(p["hp"])
-
+    if "trailing_unparsed_data" in p:
+        writer.write(bytes(p["trailing_unparsed_data"]))
     encoded_bytes = writer.bytes()
     return encoded_bytes
