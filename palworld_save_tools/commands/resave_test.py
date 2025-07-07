@@ -30,10 +30,10 @@ def main():
     print(f"Comparing {input_path} and {output_sav_path}...")
     with open(input_path, "rb") as f:
         input_bytes = f.read()
-        original_gvas = decompress_sav_to_gvas(input_bytes)
+        original_gvas, _ = decompress_sav_to_gvas(input_bytes)
     with open(output_sav_path, "rb") as f:
         output_bytes = f.read()
-        resaved_gvas = decompress_sav_to_gvas(output_bytes)
+        resaved_gvas, _ = decompress_sav_to_gvas(output_bytes)
     if original_gvas == resaved_gvas:
         print("Files are the same!")
     else:

@@ -14,6 +14,9 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dynamic = ["version"]
+dependencies = [
+    "pyooz @ git+https://github.com/MRHRTZ/pyooz.git"
+]
 
 [project.urls]
 Homepage = "https://github.com/cheahjs/palworld-save-tools"
@@ -35,3 +38,6 @@ performance = ["recordclass"]
 [[tool.mypy.overrides]]
 module = ["recordclass", "parameterized"]
 ignore_missing_imports = true
+
+[tool.hatch.metadata]
+allow-direct-references = true

@@ -42,6 +42,13 @@ def main():
         help="Force overwriting output file if it already exists without prompting",
     )
     parser.add_argument(
+        "--library",
+        "-l",
+        choices=["zlib", "libooz"],
+        default="libooz",
+        help="Compression library used to convert JSON files to SAV files. 'zlib' for zlib compression, 'libooz' for libooz compression (default: libooz)",
+    )
+    parser.add_argument(
         "--convert-nan-to-null",
         action="store_true",
         help="Convert NaN/Inf/-Inf floats to null when converting from SAV to JSON. This will lose information in the event Inf/-Inf is in the sav file (default: false)",
@@ -86,7 +93,7 @@ def main():
             output_path = args.filename.replace(".json", "")
         else:
             output_path = args.output
-        convert_json_to_sav(args.filename, output_path, force=args.force)
+        convert_json_to_sav(args.filename, output_path, force=args.force, zlib=(args.library == "zlib"))
 
 
 def convert_sav_to_json(
@@ -126,7 +133,7 @@ def convert_sav_to_json(
         )
 
 
-def convert_json_to_sav(filename, output_path, force=False):
+def convert_json_to_sav(filename, output_path, force=False, zlib=False):
     print(f"Converting {filename} to SAV, saving to {output_path}")
     if os.path.exists(output_path):
         print(f"{output_path} already exists, this will overwrite the file")
@@ -145,8 +152,9 @@ def convert_json_to_sav(filename, output_path, force=False):
         save_type = 0x32
     else:
         save_type = 0x31
+    if zlib: save_type = 0x32 # Use double zlib compression
     sav_file = compress_gvas_to_sav(
-        gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type
+        gvas_file.write(PALWORLD_CUSTOM_PROPERTIES), save_type, zlib=zlib
     )
     print(f"Writing SAV file to {output_path}")
     with open(output_path, "wb") as f:

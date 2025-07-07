@@ -162,6 +162,10 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# libs
+palworld_save_tools/libs/oodle/include
+palworld_save_tools/libs/oodle/lib
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
