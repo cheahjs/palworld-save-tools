@@ -89,3 +89,7 @@ pip install palworld-save-tools
 - [PalEdit](https://github.com/EternalWraith/PalEdit) - GUI for editing Pals
 - [palworld-server-tool](https://github.com/zaigie/palworld-server-tool) - Managing dedicated servers via RCON and SAV file parsing
 - [palworld-server-toolkit](https://github.com/magicbear/palworld-server-toolkit) - Assorted set of SAV file manipulations
+
+## Related Resources
+
+- [Palworld Guides](https://palworldguides.xyz/) — Palworld tier lists, base builds, Pal breeding chains, and boss strategies.
